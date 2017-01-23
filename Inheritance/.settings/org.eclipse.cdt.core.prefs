@@ -1,0 +1,6 @@
+eclipse.preferences.version=1
+environment/project/cdt.managedbuild.config.gnu.cygwin.exe.debug.16646143/PATH/delimiter=;
+environment/project/cdt.managedbuild.config.gnu.cygwin.exe.debug.16646143/PATH/operation=replace
+environment/project/cdt.managedbuild.config.gnu.cygwin.exe.debug.16646143/PATH/value=C\:/cygwin64/bin;C\:/Program Files/Java/jre1.8.0_112/bin/server;C\:/Program Files/Java/jre1.8.0_112/bin;C\:/Program Files/Java/jre1.8.0_112/lib/amd64;C\:\\ProgramData\\Oracle\\Java\\javapath;C\:\\Program Files (x86)\\Lenovo\\FusionEngine;C\:\\WINDOWS\\system32;C\:\\WINDOWS;C\:\\WINDOWS\\System32\\Wbem;C\:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C\:\\Program Files (x86)\\Common Files\\lenovo\\easyplussdk\\bin;C\:\\Program Files\\Intel\\WiFi\\bin\\;C\:\\Program Files\\Common Files\\Intel\\WirelessCommon\\;C\:\\cygwin64\\bin;C\:\\Users\\USER\\AppData\\Local\\Microsoft\\WindowsApps;;C\:\\Laurence\\eclipse\\eclipse-cpp-neon-1a-win32-x86_64\\eclipse
+environment/project/cdt.managedbuild.config.gnu.cygwin.exe.debug.16646143/append=true
+environment/project/cdt.managedbuild.config.gnu.cygwin.exe.debug.16646143/appendContributed=true
