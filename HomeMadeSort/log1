@@ -1,0 +1,35 @@
+08:16:25 **** Build of configuration Debug for project HomeMadeSort ****
+make all 
+Building file: ../src/BloomberStringTest.cpp
+Invoking: Cygwin C++ Compiler
+g++ -std=c++1y -O0 -g3 -Wall -c -fmessage-length=0 -std=gnu++11 -MMD -MP -MF"src/BloomberStringTest.d" -MT"src/BloomberStringTest.o" -o "src/BloomberStringTest.o" "../src/BloomberStringTest.cpp"
+Finished building: ../src/BloomberStringTest.cpp
+ 
+Building file: ../src/HomeMadeSort.cpp
+Invoking: Cygwin C++ Compiler
+g++ -std=c++1y -O0 -g3 -Wall -c -fmessage-length=0 -std=gnu++11 -MMD -MP -MF"src/HomeMadeSort.d" -MT"src/HomeMadeSort.o" -o "src/HomeMadeSort.o" "../src/HomeMadeSort.cpp"
+Finished building: ../src/HomeMadeSort.cpp
+ 
+Building file: ../src/createStairCase.cpp
+Invoking: Cygwin C++ Compiler
+g++ -std=c++1y -O0 -g3 -Wall -c -fmessage-length=0 -std=gnu++11 -MMD -MP -MF"src/createStairCase.d" -MT"src/createStairCase.o" -o "src/createStairCase.o" "../src/createStairCase.cpp"
+Finished building: ../src/createStairCase.cpp
+ 
+Building file: ../src/inputOutputExample.cpp
+Invoking: Cygwin C++ Compiler
+g++ -std=c++1y -O0 -g3 -Wall -c -fmessage-length=0 -std=gnu++11 -MMD -MP -MF"src/inputOutputExample.d" -MT"src/inputOutputExample.o" -o "src/inputOutputExample.o" "../src/inputOutputExample.cpp"
+Finished building: ../src/inputOutputExample.cpp
+ 
+Building file: ../src/reverseWords.cpp
+Invoking: Cygwin C++ Compiler
+g++ -std=c++1y -O0 -g3 -Wall -c -fmessage-length=0 -std=gnu++11 -MMD -MP -MF"src/reverseWords.d" -MT"src/reverseWords.o" -o "src/reverseWords.o" "../src/reverseWords.cpp"
+Finished building: ../src/reverseWords.cpp
+ 
+Building target: HomeMadeSort.exe
+Invoking: Cygwin C++ Linker
+g++  -o "HomeMadeSort.exe"  ./src/BloomberStringTest.o ./src/HomeMadeSort.o ./src/createStairCase.o ./src/inputOutputExample.o ./src/reverseWords.o   
+Finished building target: HomeMadeSort.exe
+ 
+
+08:16:29 Build Finished (took 3s.682ms)
+
