@@ -1,6 +1,6 @@
 /*
  * myThr
-ead.h
+ ead.h
  *
  *  Created on: Dec 8, 2016
  *      Author: USER
@@ -12,7 +12,6 @@ ead.h
 #include <cstddef>
 #include <string>
 
-
 using namespace std;
 
 #define T_START cout <<  "Start**  File:" << __FILE__ << " Line:" << __LINE__ << " Function:" << __FUNCTION__ << endl;
@@ -21,16 +20,18 @@ using namespace std;
 class MyThreadBoost
 {
 public:
-	MyThreadBoost(const std::string& description);
-	MyThreadBoost(const MyThreadBoost&);
-	~MyThreadBoost();
-	MyThreadBoost& operator=(const MyThreadBoost& arg);
-	void doSomething();
-	static void threadDoSomething();
+  MyThreadBoost(const std::string& description);
+  MyThreadBoost(const MyThreadBoost&);
+  ~MyThreadBoost ();
+  MyThreadBoost&
+  operator= (const MyThreadBoost& arg);
+  void doSomething();
+  static void threadDoSomething ();
 private:
-	std::string m_description;
-	MyThreadBoost():m_description(NULL) {};
-};
+  std::string m_description;
+  MyThreadBoost () : m_description (NULL)
+  {};
 
+};
 
 #endif /* MYTHREADBOOST_HPP_ */
