@@ -171,11 +171,11 @@ doIt()
 // get the lowest value in the array, starting at index and put it at array[index] and return the value.
 // size is the size of the array.
 int
-getLowest(int array[], int index, int size)
+getLowest( int array[], int index, int size )
 {
   int lowestValue = array[index];
   int lowestValueIndex = index;
-  for (int i = index + 1; i < size; i++)
+  for( int i = index + 1; i < size; i++ )
   {
       if (array[i] < lowestValue)
       {
@@ -191,7 +191,7 @@ getLowest(int array[], int index, int size)
 }
 
 void
-print (const int array[], int size)
+print( const int array[], int size )
 {
   for (int i = 0; i < size; i++)
     {
@@ -202,7 +202,7 @@ print (const int array[], int size)
 
 // use the std::sort to sort the array.
 void
-doItWithSTL_Sort ()
+doItWithSTL_Sort()
 {
   T_START;
   // initialize the array
@@ -228,11 +228,11 @@ doItWithSTL_Sort ()
   // remove duplicates
   // using default comparison:
   std::vector<A>::iterator it;
-  it = std::unique (vectorA.begin(), vectorA.end());
+  it = std::unique( vectorA.begin(), vectorA.end() );
   vectorA.resize( std::distance(vectorA.begin(),it) );
 
   cout << "sorted vector(without duplicates)=" << endl;
-  for( auto &n: vectorA)
+  for( auto &n: vectorA )
   {
       n.print();
   }
@@ -240,6 +240,9 @@ doItWithSTL_Sort ()
   T_END;
 }
 
+
+// use the std::set to sort the array and eliminate duplicates as well
+void
 void doItWithSTL_Set()
 {
   T_START;
@@ -261,6 +264,7 @@ void doItWithSTL_Set()
   // put into a set; each element is unique. It will be sorted and duplicates eliminated.
   std::set<int> mySet( myArray.begin(), myArrayIter++ );
 
+  // print out result;
   cout << "mySet=" << endl;
   int j = 0;
   for( auto elem: mySet)
