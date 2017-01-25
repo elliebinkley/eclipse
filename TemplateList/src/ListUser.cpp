@@ -15,9 +15,11 @@
 
 using namespace std;
 
-int main(void) {
-	cout << "starting main File=" << __FILE__ << "  line=" << __LINE__ << endl;
-	AppUser appUser;
-	appUser.useListTemplate();
+int
+main (void)
+{
+  cout << "starting main File=" << __FILE__ << "  line=" << __LINE__ << endl;
+  AppUser appUser;
+  appUser.useListTemplate ();
 }
 

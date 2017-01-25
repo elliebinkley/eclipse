@@ -11,10 +11,13 @@
 #include "ListTemplate.h"
 #include "Person.h"
 
-class AppUser {
+class AppUser
+{
 public:
-	void useListTemplate();
-	void printList(SimpleList<Person>& list);
+  void
+  useListTemplate ();
+  void
+  printList (SimpleList<Person>& list);
 };
 
 #endif /* APPUSER_H_ */
