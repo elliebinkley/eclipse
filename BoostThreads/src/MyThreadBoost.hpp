@@ -23,8 +23,7 @@ public:
   MyThreadBoost(const std::string& description);
   MyThreadBoost(const MyThreadBoost&);
   ~MyThreadBoost ();
-  MyThreadBoost&
-  operator= (const MyThreadBoost& arg);
+  MyThreadBoost&operator= (const MyThreadBoost& arg);
   void doSomething();
   static void threadDoSomething ();
 private:

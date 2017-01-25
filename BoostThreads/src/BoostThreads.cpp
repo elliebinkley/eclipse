@@ -18,7 +18,7 @@ main ()
 {
   T_START;
   MyThreadBoost *threadExample = new MyThreadBoost ("Example of Boost Thread usage");
-  MyThreadBoost test (*threadExample);
+  MyThreadBoost test(*threadExample);
   threadExample->doSomething ();
   if (threadExample)
     delete threadExample;
