@@ -16,16 +16,20 @@
 
 using namespace std;
 
-int main() {
-	T_START;
-	try {
-		UniformInit::UniformInitializationSyntax::getInstance()->runTests();
-		Construct::Construction::getInstance()->runTests();
-		SmartPtr::SmartPointer::getInstance()->runTests();
-		T_END;
-	} catch (exception& e )
-	{
-		cerr << e.what() << endl;
-	}
-	return 0;
+int
+main ()
+{
+  T_START;
+  try
+    {
+      UniformInit::UniformInitializationSyntax::getInstance ()->runTests ();
+      Construct::Construction::getInstance ()->runTests ();
+      SmartPtr::SmartPointer::getInstance ()->runTests ();
+      T_END;
+    }
+  catch (exception& e)
+    {
+      cerr << e.what () << endl;
+    }
+  return 0;
 }
