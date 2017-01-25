@@ -49,9 +49,9 @@ printSum (void);
 class TestInfo
 {
 public:
-  pthread_t myThreadInfo;
-  pthread_t mainThreadInfoValue;
-  long int randomValue;
+  pthread_t myThreadInfo;          // thread info for thread
+  pthread_t mainThreadInfoValue;   // thread info for main thead.
+  long int randomValue;            // a random number which will be summed.
   TestInfo () :
       myThreadInfo(0), mainThreadInfoValue(0),
 	  randomValue(rand () / NUM_THREADS)
@@ -69,14 +69,13 @@ public:
 };
 
 // Static class thread tracking static array object
-
 typedef std::array<TestInfo, NUM_THREADS> MyTestInfo;
 static MyTestInfo myTestInfo{ };  // initializes with default constructor
 
 // vector for tracking pthread_key_t keys
 static std::vector<pthread_key_t> *threadMap = 0;
 
-static int randomSum = 0;                // sum of all pthread randomValues;
+static int randomSum = 0;                // sum of all pthread randomValues from TestInfo
 static pthread_mutex_t* randomSumMutex;  // mutex to protect randomSum
 static pthread_cond_t *cv;               // condition variable
 
@@ -84,7 +83,11 @@ static pthread_cond_t *cv;               // condition variable
 //static pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-// The static array myTestInfo gets statically initialized with 6 TestInfo objects.
+// The static array myTestInfo gets statically initialized with 6 TestInfo objects prior to main()
+// main() creates a bunch of threads. Each thread adds a random number to a global sum value and waits 5 seconds.
+// The updating and the waiting are mutex protected. Then the thread exists.
+// The main thread waits for each thread to complete, then when all have completed, prints out the global sum.
+
 int
 main()
 {
@@ -103,10 +106,10 @@ main()
   // print out the main thread id
   pthread_t myThread = pthread_self();
   std::stringstream s1 = std::stringstream();
-  s1 << "main threadId = " << myThread << endl;
+  s1 << "\n main threadId = " << myThread << endl;
   std::cout << s1.str();
 
-  // initialize pthread_key_t vector object;
+  // initialize pthread_key_t vector object  via the method threadinit.
   pthread_once_t once = PTHREAD_ONCE_INIT;
   if(( retVal = pthread_once( &once, threadInit )) != 0 )
   {
@@ -114,7 +117,7 @@ main()
       pthread_exit(NULL);
   }
 
-  // create a key; the key can be used by each thread. Put this key in a vector of keys..
+  // create a key for the main thread; the key can be used by each thread. Put this key in a vector of keys..
   pthread_key_t threadKey_1;
   if(( retVal = pthread_key_create( &threadKey_1, threadDestroy )) != 0)
   {
@@ -136,19 +139,24 @@ main()
   MyTestInfo::iterator iter;
   for(iter = myTestInfo.begin(); iter < myTestInfo.end(); iter++)
   {
-      iter->mainThreadInfoValue = myThread;
+	  // store parent thread id
+	  iter->mainThreadInfoValue = myThread;
+
+	  // create child thread with the attributes ( &attr) of the parent.
+	  // thread starts running at doSomething.
+	  // Pass the doSomething the iter as an argument.
       retVal = pthread_create( &iter->myThreadInfo, &attr, doSomething, (void*) iter );
       if (retVal == 0)
 	  {
 	     std::stringstream s;
 	     s << "thread creation succeeded; threadId=" << iter->myThreadInfo << endl;
-	     std::cout << s.str();
+	     std::cout << s.str() << endl;
 	  }
       else
 	  {
 	     std::stringstream s;
 	     s << "thread creation failed; retVal=" << retVal << endl;
-	     std::cout << s.str() << endl;
+	     std::cout << s.str();
 	  }
   }
   // no need for the data structure now.
@@ -162,9 +170,9 @@ main()
        if( !retVal )
 	  {
 	       std::stringstream sDone;
-	       sDone << "Joined with thread=" << iter->myThreadInfo << ":retVal= " << res->c_str () << endl;
-	       cout << sDone.str () << endl;
-	       delete (res);
+	       sDone << "Joined with thread=" << iter->myThreadInfo << ":retVal= " << res->c_str ();
+	       cout << sDone.str() << endl;;
+	       delete( res );
 	  }
       else cout << "bad result=" << retVal << endl;
   }
@@ -182,8 +190,8 @@ main()
 
   std::stringstream s;
   s << "END:  Function=" << __FUNCTION__ << " File=" << __FILE__ << " Line="
-      << __LINE__ << endl;
-  std::cout << s.str();
+      << __LINE__;
+  std::cout << s.str() << endl;
 
   pthread_exit( NULL );
   return 0;
@@ -197,8 +205,8 @@ doSomething( void* data )
 
   std::stringstream s;
   s << "Start:  Function=" << __FUNCTION__ << " File=" << __FILE__ << " Line="
-      << __LINE__ << " threadID=" << id << endl;
-  std::cout << s.str();
+      << __LINE__ << " threadID=" << id;
+  std::cout << s.str() << endl;
 
   // return string info;  the main thread will destroy the memory when it joins.
   std::stringstream retStatus;
@@ -213,7 +221,7 @@ doSomething( void* data )
   }
 
   // get the key from the vector and create an associated thread specific string
-  pthread_key_t key = threadMap->front ();
+  pthread_key_t key = threadMap->front();
   if( key == NULL )
   {
       cout << "key is NULL << endl";
@@ -239,8 +247,16 @@ doSomething( void* data )
   }
 
   // update the global sum; protect with mutex
+
   pthread_mutex_lock( randomSumMutex );
+  int randomSumOld = 0;
+  randomSumOld = randomSum;
   randomSum = randomSum + ( (TestInfo*)(data))->randomValue;
+
+  // print data
+  std::stringstream s5 = std::stringstream();
+  s5 << "\nadding randomValue=" <<  ((TestInfo*)(data))->randomValue << " to randomSum=" << randomSumOld << " to get new randomSum=" << randomSum;
+  std::cout << s5.str() << endl;
   sleep(5);
   pthread_mutex_unlock( randomSumMutex );
 
@@ -276,16 +292,19 @@ doSomething( void* data )
    */
   std::stringstream s4;
   s4 << "END:  Function=" << __FUNCTION__ << " File=" << __FILE__ << " Line="
-      << __LINE__ << " threadID=" << id << endl;
-  std::cout << s4.str();
+      << __LINE__ << " threadID=" << id;
+  std::cout << s4.str() << endl;
   pthread_exit( (void*)termStatus );
   return( NULL );
 }
 
-// print out thread attributes available in Cygwin->
+// print out thread attributes available in Cygwin:
+// thread attributes are contained in "attr".
 static void
 printThreadAttributes( pthread_attr_t attr )
 {
+
+   cout << "print attributes of threads as implemented in Cygwin" << endl;
 
   int attr_value_int = 0;
   // thread state
@@ -295,7 +314,7 @@ printThreadAttributes( pthread_attr_t attr )
 	  << (attr_value_int ? ":PTHREAD_CREATE_DETACHED" : ":PTHREAD_CREATE_JOINABLE") << endl;
   }
 
-  // guardsize; buffer area for stack protection
+  // guard-size; e.g. buffer area for stack protection
   size_t attr_value_size_t = 0;
   if( !pthread_attr_getguardsize( &attr, &attr_value_size_t ) )
   {
@@ -327,8 +346,7 @@ printThreadAttributes( pthread_attr_t attr )
   // thread scope;
   if( !pthread_attr_getscope( &attr, &attr_value_int ))
   {
-      std::array<std::string, 3> scope
-	       { ":PTHREAD_SCOPE_PROCESS", ":PTHREAD_SCOPE_SYSTEM" };
+      std::array<std::string, 2> scope { ":PTHREAD_SCOPE_PROCESS", ":PTHREAD_SCOPE_SYSTEM" };
       cout << "thread scope=" << attr_value_int << scope[attr_value_int] << endl;
   }
 
@@ -345,20 +363,30 @@ printThreadAttributes( pthread_attr_t attr )
 static void
 threadInit( void )
 {
-  threadMap = new std::vector<pthread_key_t>;
+  // initialize thread array if not done already.
+  if ( !threadMap )
+  {
+	  threadMap = new std::vector<pthread_key_t>;
+  }
+  // create and initialize a mutex to be used to protect variable randomSum.
+  // Upon successful initialization, the state of the mutex becomes initialized and unlocked since NULL is default
+  // There are two types of attributes: type ( with a default of PTHREAD_MUTEX_NORMAL and
+  // robust( with a default of PTHREAD_MUTEX_ROBUST)
   randomSumMutex = new pthread_mutex_t( PTHREAD_MUTEX_INITIALIZER );
-  cv = new pthread_cond_t( PTHREAD_COND_INITIALIZER );
+  if( pthread_mutex_init( randomSumMutex, NULL ) != 0 )
+   {
+       cout << "pthread_mutex_init() failed" << endl;
+   }
 
+  // create a thread condition and initialize it.
+  cv = new pthread_cond_t( PTHREAD_COND_INITIALIZER );
   if( pthread_cond_init( cv, NULL ) != 0 )
   {
       cout << "pthread_cond_init() failed" << endl;
   }
-  if( pthread_mutex_init( randomSumMutex, NULL ) != 0 )
-  {
-      cout << "pthread_mutex_init() failed" << endl;
-  }
 
-  cout << "threadInit()" << endl;
+
+  cout << "threadInit() done" << endl;
   return;
 }
 
@@ -371,7 +399,7 @@ threadDestroy( void* ptr )
       // ptr should be a std::string pointer set up with pthread_create_key()
       std::string* strPtr = (std::string*) ptr;
       std::stringstream temp;
-      temp << "threadDestroy() strPtr=" << strPtr->c_str() << endl;
+      temp << "threadDestroy() strPtr=" << strPtr->c_str();
       cout << temp.str() << endl;
       delete strPtr;
   }
