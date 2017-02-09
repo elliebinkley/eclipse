@@ -2,7 +2,7 @@
  * Construction.hpp
  *
  *  Created on: Jan 5, 2017
- *      Author: USER
+ *      Author: Larry Burley
  */
 
 #ifndef CONSTRUCTION_HPP_
@@ -31,12 +31,10 @@ namespace Construct
     // make private the copy constructor;use the default implementation
     Construction (const Construction& object) = default;
     // make private the =  operator;use the default implementation
-    Construction&
-    operator= (const Construction& object) = default;
+    Construction&  operator= (const Construction& object) = default;
     // default does not apply to == operator; so write an implementation; make it private;
     // as a singleton, this should never get called
-    friend bool
-    operator== (const Construction& rhs, const Construction lhs)
+    friend bool operator== (const Construction& rhs, const Construction lhs)
     {
       return (rhs == lhs);
     };

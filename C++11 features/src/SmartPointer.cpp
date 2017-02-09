@@ -2,10 +2,12 @@
  * SmartPointer.cpp
  *
  *  Created on: Jan 16, 2017
- *      Author: USER
+ *      Author: Larry Burley
  *      C++11 includes new smart pointer classes: shared_ptr and the recently-added unique_ptr.
  *      Both are compatible with other Standard Library components, so you can safely store these smart pointers
  *      in standard containers and manipulate them with standard algorithms.
+ *      This program uses various aspects of the std:unique_ptr. It createsa singlton, then runs a bunch of tests
+ *      using unique_ptr.
  */
 
 #include <iostream>
@@ -59,7 +61,7 @@ namespace SmartPtr
   SmartPointer::smartPointerTest_1()
   {
     T_START;
-    std::unique_ptr<A> p1 (new A ("a10"));
+    std::unique_ptr<A> p1(new A ("a10"));
     p1->print();
     T_END;
   }
@@ -70,21 +72,22 @@ namespace SmartPtr
   {
     T_START;
     std::vector<std::unique_ptr<A>> vectorSP;
-    for (int i = 0; i < 10; i++)
+    for(int i = 0; i < 10; i++ )
     {
 	    std::stringstream s4;
 	    s4 << i << " ";
-	    vectorSP.push_back (std::unique_ptr<A> (new A (s4.str ())));
+	    vectorSP.push_back(std::unique_ptr<A> (new A (s4.str ())));
     }
 
-    for (const auto &n : vectorSP)
+    for( const auto &n : vectorSP )
     {
-	    n->print ();
+	    n->print();
     }
     T_END;
   }
 
-// test copy constructor when class has a smart pointer.
+// test copy constructor when class has a smart pointer.  Copy constructor with a smart pointer is normally
+// not allowed, since smart pointers cannot be copied. Unless you write a specific implementation
   void
   SmartPointer::smartPointerTest_3()
   {
@@ -104,7 +107,7 @@ namespace SmartPtr
   }
 
 // test default constructor with smart  pointer;
-// check that class member which is a smart pointer is  initialized correctly.
+// check that class member which is a smart pointer is initialized correctly.
   void
   SmartPointer::smartPointerTest_4()
   {
@@ -112,8 +115,8 @@ namespace SmartPtr
     // default constructor of A using smart pointer
     std::unique_ptr<A> p1( new A() );
 
-    // see if default values of A smart [pointer members are printed correctly.
-    p1->print ();
+    // see if default values of A smart pointer members are printed correctly.
+    p1->print();
     T_END;
   }
 
@@ -123,11 +126,11 @@ namespace SmartPtr
   {
     T_START;
     // default constructor of A.
-    A a ("instance of class A");
-    a.print ();
+    A a("instance of class A");
+    a.print();
     A a1 = std::move (a);
-    a.print ();
-    a1.print ();
+    a.print();   // see if data is gone.
+    a1.print();  // see if data was moved from a to a1.
     T_END;
   }
 

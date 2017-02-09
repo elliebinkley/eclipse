@@ -3,7 +3,7 @@
  *
  *  Created on: Jan 5, 2017
  *      Author: Burley
- *      Brief: Investigate various ways to construct a class.
+ *      Brief: Investigate various ways to construct a class, in particular, C++11 features.
  *      Description:
  *      1. copy constructor,
  *      2. assignment operator,

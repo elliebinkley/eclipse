@@ -3,7 +3,7 @@
 // Author      : larry Burley
 // Version     :
 // Copyright   : Your copyright notice
-// Description : Code for various C++11 features.
+// Description : Code for various C++11 features. See individual modules for details
 //============================================================================
 
 #include <iostream>

@@ -2,6 +2,7 @@
  * SmartPointer.hpp
  *
  *  Created on: Jan 16, 2017
+ *
  *      Author: USER
  */
 
@@ -43,7 +44,8 @@ namespace SmartPtr
       m_ptr_string = std::unique_ptr<std::string> ( new string (*(a.m_ptr_string.get ())));
     }
 
-    // move constructor; need to supply as user defined constructors/destructors are supplied.
+    // move constructor; need to supply as user defined constructors/destructors are supplied which invalidates default
+    // move constructor supplied by compiler.
     inline A (A&& o) noexcept : m_ptr_string(std::move(o.m_ptr_string))
     {
     	std::cout << "A(A&&): move constructor invoked\n";

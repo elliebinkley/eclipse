@@ -20,7 +20,8 @@ testOut (void);
 const std::map<Mammal::Gender, std::string> Mammal::m_genderMap =
   {
     { Mammal::Gender::male, "male" },
-    { Mammal::Gender::female, "female" } };
+    { Mammal::Gender::female, "female" }
+  };
 
 // stringify the Gender enumeration using constexpr on std::array, which tells the compiler to
 // initialized the m_array structure.  Only works on "literal" structures/classes/primitives.
@@ -29,7 +30,8 @@ const std::map<Mammal::Gender, std::string> Mammal::m_genderMap =
 #define stringify( name ) # name   // # name returns the string "name" ; see definitions of # in preprocessor
 constexpr std::array<const char*, Mammal::Gender::last_item> Mammal::m_array =
   {
-    { stringify(male), stringify(female) } };
+    { stringify(male), stringify(female) }
+  };
 
 // stringify the Gender enumeration using preprocessor.
 // This technique below does the same thing as the std::map<Gender, std::string> genderMap above in terms of
