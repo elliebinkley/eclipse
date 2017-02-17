@@ -1,5 +1,12 @@
-
-
+Synopsis:  BoostUnitTest uses the Boost:Test library to test a lot of features thgat were new to C++11, plus it looks at inheritance 
+           and multiple inheritance in light of new C++ syntax features.  In addition, unique_smart pointer is tested within and
+           outside of various containers.
+           
+           The executable is called BoostUnitTest.exe and it depends on ShareLibary.dll.
+            
+           The code was compiled in a cywin environment. 
+           
+Some additional notes.
 I.  BoostUnitTest uses .dll files ( Shared libraries ).  
 There are four things to configure for running shared libraries.  
 
@@ -44,7 +51,7 @@ There are four things to configure for running shared libraries.
  II.  In Eclipse,  Properties->Run/Debug Settings -> Arguements, --log_level=all is passed upon execution. 
    This logs a lot of stuff to the console. 
    
- III
+ 
    
    
    
