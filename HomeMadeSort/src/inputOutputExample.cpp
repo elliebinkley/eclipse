@@ -20,15 +20,15 @@ extern void
 input_output_with_c_functions ();
 
 void
-inputOutputExample ()
+inputOutputExample()
 {
-  helloWorldCPlusPlus ();
-  input_output_with_c_functions ();
+  helloWorldCPlusPlus();
+  input_output_with_c_functions();
 
 }
 
 void
-input_output_with_c_functions ()
+input_output_with_c_functions()
 {
   printf ("Start: %s %s %d\n", __FUNCTION__, __FILE__, __LINE__);
 
@@ -56,6 +56,7 @@ helloWorldCPlusPlus ()
       << endl;
   std::string inputString;
   cout << "please type some input and hit ENTER" << endl;
+  //  getline waits for a line feed. cin >> inputString would terminate with a space...
   getline (cin, inputString);
 
   cout << "Hello World" << endl;

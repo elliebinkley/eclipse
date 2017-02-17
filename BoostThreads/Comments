@@ -1,9 +1,10 @@
-1. Boost headers in cygwin are located under /usr/include/boost. 
-   According to version.hpp, the Boost version is 1_60 
+1. Boost headers in cygwin ( c:/cywin64 ) are located under "usr/include/boost". 
+   According to the file version.hpp, the Boost version is 1_60 that is currently installed in cygwin.
    The lastest boost download as per http://www.boost.org/users/download/ is 1_63. 
    Version 1_60 was released on December 17th, 2015.
 
    Mingwin headers are located under /usr/x86_64-w64-mingw32/sys-root/mingw/include/boost
+   
 2. For using time_fmt with systemClock under chrono namespace.
    There are two versions of the input/output chrono functions since Boost 1.52.0. 
    which affects the compilation of time_fmt().
@@ -14,4 +15,5 @@
    #include <boost/chrono/io_v1/chrono_io.hpp>  
    v2 includes; works on cygwin., But need to set 
    #define BOOST_CHRONO_VERSION 2 in file chrono/config.hpp.
-   3.
+
+3. 

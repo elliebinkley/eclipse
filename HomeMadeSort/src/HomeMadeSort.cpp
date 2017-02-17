@@ -78,7 +78,7 @@ main()
   {
      if( myArray[i] != myArray[i -1] )
      {
-       if(k_index == k )
+       if( k_index == k )
        {
 	   cout << "Bug:number of unique entries are > " << k << endl;
 	   continue;
@@ -99,8 +99,10 @@ main()
   doIt();
 
   // method 3; Use STL sort algorithm
+
   doItWithSTL_Sort();
 
+  // method 4; Use STL set
   doItWithSTL_Set();
 
   cout
@@ -113,7 +115,9 @@ main()
 
   inputOutputExample();
 
+  cout << "jjjjjjjjjjjjjjjjjjjjjjj" << endl;
   bloombergStringTestVersion1();
+  cout << "jjjjjjjjjjjjjjjjjjjjjjj" << endl;
   bloombergStringTestVersion2();
 
   return 0;
@@ -200,7 +204,8 @@ print( const int array[], int size )
 }
 
 
-// use the std::sort to sort the array.
+// use the std::sort to sort the array, then use std:unique to remove duplicates.
+// sort an array of names contained in a class wtih first anem and last name.
 void
 doItWithSTL_Sort()
 {
@@ -243,7 +248,7 @@ doItWithSTL_Sort()
 
 // use the std::set to sort the array and eliminate duplicates as well
 void
-void doItWithSTL_Set()
+doItWithSTL_Set()
 {
   T_START;
 

@@ -19,36 +19,30 @@
 #include "MyLogger.hpp"
 
 using namespace std;
+using namespace boost;
 
-/*
+class ThreadBoostTester
+{
+public:
+	static ThreadBoostTester* instance();
+	void runThreadBoostTests();
 
-#define T_START std::stringstream s1 = std::stringstream(); \
-	           s1 << boost::chrono::time_fmt(boost::chrono::timezone::local) \
-                << boost::chrono::system_clock::now() << " : "  \
-				<< "thread id:" << boost::this_thread::get_id()  \
-                << " Start File:" << __FILE__ \
-				<< " Function:" << __FUNCTION__ \
-                << " Line:" << __LINE__    << endl; \
-                cout << s1.str();
+private:
+	// make private the constructor;use the default implementation
+	ThreadBoostTester() = default;
+	// make private the copy constructor;use the default implementation
+	ThreadBoostTester(const ThreadBoostTester& o)= default;
+	// make private the =  operator;use the default implementation
+	ThreadBoostTester& operator= (const ThreadBoostTester& o) = default;
+	// default does not apply to == operator; so write an implementation; make it private;
+	// as a singleton, this should never get called
+	friend bool operator== (const ThreadBoostTester& rhs, const ThreadBoostTester lhs)
+    {
+	    return (rhs == lhs);
+	};
 
-
-#define T_START1 cout \
-	            << boost::chrono::time_fmt(boost::chrono::timezone::local) \
-                << boost::chrono::system_clock::now() << " : "  \
-				 << "thread id:" << boost::this_thread::get_id()  \
-                << " Start File:" << __FILE__ \
-				<< " Function:" << __FUNCTION__ \
-                << " Line:" << __LINE__    << endl;
-
-#define T_END cout \
-	            << boost::chrono::time_fmt(boost::chrono::timezone::local) \
-				<< boost::chrono::system_clock::now() << " : "   \
-                << "thread id:" << boost::this_thread::get_id()  \
-				<< " End File:" << __FILE__ \
-				<< " Function:" << __FUNCTION__ \
-                << " Line:" << __LINE__  << endl;
-
-*/
+	static ThreadBoostTester* m_ThreadBoostTesterPtr;
+};
 
 class MyThreadBoost
 {

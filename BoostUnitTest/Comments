@@ -1,0 +1,51 @@
+
+
+I.  BoostUnitTest uses .dll files ( Shared libraries ).  
+There are four things to configure for running shared libraries.  
+
+   1. Shared library compilation under Eclipse IDE: 
+      If project A is using a shared libary:  See Project Settings->C/C++ Build -> Settings->C++ Linker->Libraries  
+      Set the name of the library and set the Library path in the appropriate tab sections. 
+      See Project Settings->C/C++ Build -> Settings->C++ Linker. 
+      The compilation output should be something like:
+      g++ -L"C:\Laurence\eclipse\eclipse-cpp-neon-workspace\SharedLibrary\Debug" -o "BoostUnitTest.exe"  ./BoostSampleTest.o ./BoostSampleTest1.o   -lboost_system -lboost_unit_test_framework -lboost_thread -lboost_date_time -lboost_chrono -lSharedLibrary
+      
+      In the shared library project, set the shared library version name. 
+      See Project Settings->C/C++ Build -> Settings->C++ Linker->SharedLibary Settings. Makes sure "shared Library" is selected. 
+      Set the soname; this is an internal name embedded in the library which can be used to communicate the version.
+      The compilation output should look something like: ( note the -shared... ) 
+      g++ -shared -Wl,-soname=SharedLibrary_1.0.0 -o "SharedLibrary.dll" $(OBJS) $(USER_OBJS) $(LIBS)
+   
+   2. If compiling/linking on the command line:
+      the makefile should have the library path set as part of the -L option, e.g.
+      g++ -L"C:\Laurence\eclipse\eclipse-cpp-neon-workspace\SharedLibrary\Debug" -o "BoostUnitTest.exe" $(OBJS) $(USER_OBJS) $(LIBS) 
+      $(LIBS) should have the list of libraries to be linked and is defined in the objects.mk file. 
+      
+      Another technique is to add the -R option e.g. -R /usr/local/lib, to the linker command line. 
+      This tells the linker to build in the library path into the
+      executable, thus avoiding having to use the $PATH,  but this only works on ELF format executables for Linux.  
+      Cygwin produces a PE32+ windows executable, so -R does not work.  
+      
+   3. Running executables that use shared libraries in Eclipse:
+      When executing "Run As" inside eclipse, it needs to find the shared library. Put the library into the eclipse $PATH variable. 
+      $PATH is defined under project properties->C/C++ Build -> environment variables. For example, add C:/cygwin64/usr/local/lib to the
+      $PATH. Place the shared library in that directory. Run As-> should then work. 
+      Note that execution does not work if the shared library is a softlink, e.g. Under C:/cygwin64/usr/local/lib, the file is:
+      SharedLibrary.dll.softlink -> /cygdrive/c/Laurence/eclipse/eclipse-cpp-neon-workspace/SharedLibrary/Debug/SharedLibrary.dll.
+      
+   4. Running executables via the command line:
+      Make sure the libary is placed into a standard directory used by the linker, e.g. /user/local/lib. The standard directory must be in
+      the bash shell $PATH variable. 
+      
+   Notes:
+   1. Note that the variable LD_LIBRARY_PATH only works for linking, not execution in a CYGWIN environment. 
+   2. See ldd for dynamic library dependentcies
+   
+ II.  In Eclipse,  Properties->Run/Debug Settings -> Arguements, --log_level=all is passed upon execution. 
+   This logs a lot of stuff to the console. 
+   
+ III
+   
+   
+   
+      

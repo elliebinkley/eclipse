@@ -30,16 +30,13 @@ bloombergStringTestVersion1 ()
       << "eg. hellotheworld -> 2h2e3l2otwrd \n  " << std::endl;
 
   std::cout << " Enter input string: " << std::endl;
-
   std::string input;
-
   getline (std::cin, input);
   std::cout << "input string = " << input << std::endl;
+
   int length = input.size ();
-  char inputStr[length + 1]
-    { };
-  char outputStr[2 * length]
-    { };
+  char inputStr[length + 1] { };
+  char outputStr[2 * length]{ };
 
   int outIdx = 0;
 
@@ -83,62 +80,69 @@ bloombergStringTestVersion1 ()
 void
 bloombergStringTestVersion2 ()
 {
-
   printf ("Start: %s %s %d\n", __FUNCTION__, __FILE__, __LINE__);
   std::cout
       << "Test: given a string, delete all duplicate characters and prefix the first instance of the \n"
       << "character with the number of occurrences duplicates\n"
+      << " assume all lower case letters "
       << "eg. hellotheworld -> 2h2e3l2otwrd \n  " << std::endl;
 
   std::string input;
-
   std::cout << " Enter input string: " << std::endl;
-
   getline (std::cin, input);
   std::cout << "input string = " << input << std::endl;
 
+
+  // find out how many times a letter has occurred and record this in the occurrence map.
+  // if a duplicate is detected in the input string, replace it with a "?"
   std::map<char, int> occurrenceMap;
-
   std::string::iterator iter;
-
   for (iter = input.begin (); iter != input.end (); iter++)
-    {
+  {
       if (!isalpha ((char) (*iter)))
 	continue;
       if (!islower ((char) (*iter)))
 	continue;
+      // insertion into a map will return false as an map pair entry if the key exists already
+      // for the pair being inserted.
+      // false is returned as a std::pair with the first part of the pair an iterator to the found
+      // element pair.
       std::pair<std::map<char, int>::iterator, bool> ret;
       ret = occurrenceMap.insert (std::pair<char, int> (*iter, 1));
       if (ret.second == false) // already in array
-	{
+      {
+	  // replace the duplicate with a "?"  in the original input string
 	  *iter = '?';
+	  // increment the occurrence count in the map
 	  ret.first->second++;
-	}
-    }
+      }
+  }
 
+  // walk through the input string and print out the letters and their occurrence count if > 1.
   cout << "outputString=";
   map<const char, int>::iterator findMapValue;
-  for (iter = input.begin (); iter != input.end (); iter++)
-    {
-      if (!isalpha ((char) (*iter)))
-	continue;
-      if (!islower ((char) (*iter)))
-	continue;
-      findMapValue = occurrenceMap.find ((char) (*iter));
-      if (findMapValue != occurrenceMap.end ())
-	{
-	  int value = occurrenceMap[*iter];
-	  if (value > 1)
-	    {
-	      cout << value;
-	    }
-	  cout << (char) (*iter);
-	}
+  // walk through the input string and print out the characters that are not a "?, along with the count..
+  for( const auto &iter1: input )
+  {
+
+      if (!isalpha((char) (iter1)))  continue;
+      if (!islower((char) (iter1)))  continue;
+      findMapValue = occurrenceMap.find((char) (iter1));
+      if ( findMapValue != occurrenceMap.end() )
+      {
+      	  int numOccurrence = occurrenceMap[iter1];
+      	  if (numOccurrence > 1)
+      	  {
+      	      cout << numOccurrence;
+      	  }
+      	  cout << (char) (iter1);
+      }
       else
-	{
-	  cout << "should not happen" << endl;
-	}
-    }
+      {
+      	 // value not found ion the occurrence map.. bug.
+      	  cout << "should not happen" << endl;
+      }
+  }
   cout << "\n" << endl;
   printf ("End: %s %s %d\n", __FUNCTION__, __FILE__, __LINE__);
 

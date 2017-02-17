@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : BootThreads.cpp
+// Name        : MainBoostThreads.cpp
 // Author      : larry Burley
 // Version     :
 // Copyright   : Your copyright notice
@@ -39,7 +39,7 @@ main ()
   cout << " number of physical threads on this system = " << boost::thread::physical_concurrency() << endl;
   cout << " number of hardware threads on this system = " << boost::thread::hardware_concurrency() << endl;
 
-  // make a smart pointer to a boost vector that contains smart pointers to MyThreadBoost objects.
+  // make a boost vector that contains smart pointers to MyThreadBoost objects.
   T_LOG("creating threads.... ");
   boost::container::vector<std::unique_ptr<MyThreadBoost>> threadMap;
   for ( int i=0; i<NUM_MY_THREADS; i++)
@@ -57,6 +57,7 @@ main ()
 	  (*iter)->run();
   }
 
+  T_LOG("main thread waits to join the child threads");
   boost::container::vector<std::unique_ptr<MyThreadBoost>>::iterator iter1;
   for( iter1 = threadMap.begin(); iter1 != threadMap.end(); iter1++)
   {

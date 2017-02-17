@@ -6,32 +6,34 @@
 // Description : Hello World in C++, Ansi-style
 //============================================================================
 
+#include "../../SharedLibrary/inc/Inheritance.hpp"
+
 #include <iostream>
-#include "Inheritance.hpp"
 
 using namespace std;
-
-extern void
-testOut (void);
 
 // stringify the Gender enumeration using Map.
 // Bracket initialization is a C++11 feature.
 // Initialization of static must be in a .cpp file
+// Note that this is a const, not a constexpr since map has is not of type literal.
 const std::map<Mammal::Gender, std::string> Mammal::m_genderMap =
   {
     { Mammal::Gender::male, "male" },
     { Mammal::Gender::female, "female" }
   };
 
+
 // stringify the Gender enumeration using constexpr on std::array, which tells the compiler to
-// initialized the m_array structure.  Only works on "literal" structures/classes/primitives.
+// initialize the m_array structure.  Only works on "literal" structures/classes/primitives like std::array.
 // constexpr is a C++11 feature.
 // Initialization of static must be in a .cpp file
 #define stringify( name ) # name   // # name returns the string "name" ; see definitions of # in preprocessor
+
 constexpr std::array<const char*, Mammal::Gender::last_item> Mammal::m_array =
   {
     { stringify(male), stringify(female) }
   };
+
 
 // stringify the Gender enumeration using preprocessor.
 // This technique below does the same thing as the std::map<Gender, std::string> genderMap above in terms of
@@ -57,10 +59,10 @@ main ()
       A1 test_a2 (std::string ("whateverXX"));
       A1 test_a3 (test_a2);
       std::cout << "test A1 (ctor) = "
-	  << ((test_a3 == test_a2) ? "true" : "false") << std::endl;
+	      << ((test_a3 == test_a2) ? "true" : "false") << std::endl;
       test_a3 = test_a1;
       std::cout << "test A1 (==) = "
-	  << ((test_a3 == test_a1) ? "true" : "false") << std::endl;
+          << ((test_a3 == test_a1) ? "true" : "false") << std::endl;
     }
 
   std::string a (" A::string ");
@@ -73,20 +75,18 @@ main ()
     {
       A a_class (a, b, a1);
       A a_class_1 (a, b, a1);
-      std::cout << "test1: (==) = "
-	  << ((a_class_1 == a_class) ? "true" : "false") << std::endl;
+      std::cout << "test1: (==) = " << ((a_class_1 == a_class) ? "true" : "false") << std::endl;
     }
     {
       A a_class_1 (a, b, a1);
       A a_class = a_class_1;
-      std::cout << "test2: ( = ) = "
-	  << ((a_class_1 == a_class) ? "true" : "false") << std::endl;
+      std::cout << "test2: ( = ) = " << ((a_class_1 == a_class) ? "true" : "false") << std::endl;
     }
     {
       A a_class_1 (a, b, a1);
       A a_class_2 (a_class_1);
       std::cout << "test3: ( cp ctor ) = "
-	  << ((a_class_2 == a_class_1) ? "true" : "false") << std::endl;
+          << ((a_class_2 == a_class_1) ? "true" : "false") << std::endl;
     }
     {
       A a_class (a, b, a1);

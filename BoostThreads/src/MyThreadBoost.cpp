@@ -1,7 +1,4 @@
-
-
-
-//#define BOOST_CHRONO_VERSION 2
+//#define BOOST_CHRONO_VERSION 2 issiues on Cywin..
 
 // There are two versions of the input/output chrono functions since Boost 1.52.0.
 // which affects the compilation of time_fmt().
@@ -106,6 +103,29 @@ MyThreadBoost::run()
     T_START;
     this->m_thread = new boost::thread(boost::ref(*this)); // invokes callable operator
     T_END;
+}
+
+
+
+// Start section on ThreadBoostTester; the class that runs the tests on bboost::threads.
+
+ThreadBoostTester* ThreadBoostTester::m_ThreadBoostTesterPtr = nullptr; // nullptr valid as of C++11
+
+ThreadBoostTester*
+ThreadBoostTester::instance()
+{
+
+	if( m_ThreadBoostTesterPtr == nullptr)
+    {
+		m_ThreadBoostTesterPtr = new ThreadBoostTester();
+    }
+	return m_ThreadBoostTesterPtr;
+}
+
+void
+ThreadBoostTester::runThreadBoostTests()
+{
+
 }
 
 

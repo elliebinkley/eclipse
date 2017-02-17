@@ -4,17 +4,17 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/BoostThreads.cpp \
+../src/MainBoostThreads.cpp \
 ../src/MyLogger.cpp \
 ../src/MyThreadBoost.cpp 
 
 OBJS += \
-./src/BoostThreads.o \
+./src/MainBoostThreads.o \
 ./src/MyLogger.o \
 ./src/MyThreadBoost.o 
 
 CPP_DEPS += \
-./src/BoostThreads.d \
+./src/MainBoostThreads.d \
 ./src/MyLogger.d \
 ./src/MyThreadBoost.d 
 
