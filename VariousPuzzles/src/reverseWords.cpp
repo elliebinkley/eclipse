@@ -18,8 +18,8 @@ void reverseWords()
     std::cout
             << "Test: Given an array of characters which form a sentence of words, write an efficient algorithm to "
             << "reverse the order of the words (not characters) in it." << std::endl;
-    const char* phrase = "this is an absolute mess      why are you here today";
-    if( ! checkInput( phrase ) )
+    const char* phrase = "this is an absolute mess   why are you here today";
+    if( !checkInput( phrase ) )
     {
         T_END
         return;

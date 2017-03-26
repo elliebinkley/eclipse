@@ -13,11 +13,13 @@
 
 // To complete this challenge, you must save a line of input from stdin to a variable,
 // print Hello, World. on a single line, and finally print the value of your variable on a second line.
+// see http://www.cplusplus.com/reference/cstdio/ for c library input/output functions.
 
 using namespace std;
 
 extern void
 helloWorldCPlusPlus();
+
 extern void
 input_output_with_c_functions();
 
@@ -31,14 +33,12 @@ void input_output_with_c_functions()
 {
     T_START
 
-    // Use getChar(), putChar(), gets(), puts(), scanf(), printf(), fopen(), fclose(),
-    // fread(), fwrite(), fgetc(), fputc(), getc(), putc()
-    // fprintf(), fscanf()
     printf("Method 1: Input using C functions\n ");
     puts( "Enter input:      ( to stop, enter '.')" );
     int c;
     while( ((c = getchar()) != '.') )
     {
+        // echo to stdout
         putchar( c );
     }
     cout << "Method 1 End" << endl;
