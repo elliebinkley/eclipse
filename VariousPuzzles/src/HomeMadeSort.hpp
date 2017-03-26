@@ -18,7 +18,7 @@
   public:
     inline NameList() = default;
     inline NameList (const std::string& firstName, const std::string lastName) :
-	m_firstName (firstName), m_lastName (lastName)   {};
+	                 m_firstName (firstName), m_lastName (lastName)   {};
     inline NameList (const NameList& a) = default;
     inline NameList& operator= (const NameList& a)
     {
@@ -30,7 +30,7 @@
     inline friend bool operator== (const NameList& lhs, const NameList& rhs)
     {
       return ((lhs.m_firstName == rhs.m_firstName )
-	    && (lhs.m_lastName == rhs.m_lastName ));
+	           && (lhs.m_lastName == rhs.m_lastName ));
     }
     inline friend bool operator!= (const NameList& lhs, const NameList& rhs)
     {
@@ -39,9 +39,9 @@
     inline friend bool operator< (const NameList& lhs, const NameList& rhs)
     {
       if (lhs.m_lastName == rhs.m_lastName)
-	return( lhs.m_firstName < rhs.m_firstName );
+	       return( lhs.m_firstName < rhs.m_firstName );
       else
-	return ( lhs.m_lastName < rhs.m_lastName );
+	       return ( lhs.m_lastName < rhs.m_lastName );
     }
     // default move = operator
     inline NameList& operator= (NameList&& a)

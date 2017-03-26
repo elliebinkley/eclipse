@@ -276,7 +276,7 @@ void mySortUsingSTL_SET()
     cout << endl;
 
     // put into a set; each element is unique. It will be sorted and duplicates eliminated.
-    std::set<int> mySet( myArray.begin(), myArrayIter++ );
+    std::set<int> mySet( myArray.begin(), myArrayIter );
 
     cout << "sorted array with no duplicates=" << endl;
     for( auto elem : mySet )
