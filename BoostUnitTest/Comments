@@ -1,10 +1,18 @@
-Synopsis:  BoostUnitTest uses the Boost:Test library to test a lot of features thgat were new to C++11, plus it looks at inheritance 
-           and multiple inheritance in light of new C++ syntax features.  In addition, unique_smart pointer is tested within and
-           outside of various containers.
-           
-           The executable is called BoostUnitTest.exe and it depends on ShareLibary.dll.
-            
-           The code was compiled in a cywin environment. 
+Synopsis:  This project ( BoostUnitTest), in general, tests a lot of features that were new to C++11. 
+           2. it looks at inheritance and multiple inheritance in light of new C++11 syntax features such as 
+              move constructors and move assignment (&& syntax). ( See ConstructionTest.cpp)
+           3. demonstrates the use of unique_smart pointer with various containers.  See SmartPointer.cpp
+           4. uses the keywords "default" and "delete" on constructors and assignment operators.
+           5. uses operator overriding ( exercise in remembering the syntax.. )
+           6. investigates the "override" identifier used to help the compiler look at virtual functions. 
+           6. uses the Boost:Test library run test suites on these features. 
+              ( See ConstructionTest.cpp as the  Master suite with the main() testRunner().
+           7.  implements a shared library ( .dll)  in Eclipse. See SharedLibrary project. 
+               I did this just as a way of actually doing a shared library in Eclipse. 
+           8. Investigate the multiple inheritance problem using the virtual keyword for class declaration. 
+              ( See Diamond Test in InheritanceTest.cpp, and Inheritance.cpp in the shared library. )
+           8. The executable is called BoostUnitTest.exe and it depends on ShareLibary.dll.
+           9. The code was compiled in a cywin environment. 
            
 Some additional notes.
 I.  BoostUnitTest uses .dll files ( Shared libraries ).  
@@ -46,7 +54,7 @@ There are four things to configure for running shared libraries.
       
    Notes:
    1. Note that the variable LD_LIBRARY_PATH only works for linking, not execution in a CYGWIN environment. 
-   2. See ldd for dynamic library dependentcies
+   2. See ldd for dynamic library dependencies
    
  II.  In Eclipse,  Properties->Run/Debug Settings -> Arguements, --log_level=all is passed upon execution. 
    This logs a lot of stuff to the console. 
