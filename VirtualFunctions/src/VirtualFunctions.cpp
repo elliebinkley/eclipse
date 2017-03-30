@@ -9,8 +9,6 @@
 #include <iostream>
 using namespace std;
 
-
-
 struct B {
   B() { seize(); }
   virtual ~B() { release(); }

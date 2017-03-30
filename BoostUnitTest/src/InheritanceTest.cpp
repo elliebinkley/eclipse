@@ -53,14 +53,130 @@ BOOST_AUTO_TEST_CASE( A_CopyAndAssignmentTest )
   BOOST_CHECK(a_class_5 == a_class_4 );
 }
 
-BOOST_AUTO_TEST_CASE( A_toStringTest )
+
+// toString is virtualized. What happens when base class pointer toString() is called?
+BOOST_AUTO_TEST_CASE( A_toStringTestVirtual )
+{
+    // test to see if toString on class A works.
+    std::string a_string( " A::string " );
+    std::string a1_string( " A1::char* " );
+    std::string b_string( " B::string" );
+    B b( b_string );
+
+    A* a_class = new A( a_string, b, a1_string );
+
+    // see if formulated string is correct.
+    // Class A's string?
+
+    std::size_t found;
+
+    found = a_class->toString().find( a_string );
+    BOOST_CHECK( found != std::string::npos );
+
+    // Base Class A1's string?
+    found = a_class->toString().find( a1_string );
+    BOOST_CHECK( found != std::string::npos );
+
+    // Class B's string?
+    found = a_class->toString().find( b_string );
+    BOOST_CHECK( found != std::string::npos );
+
+    // cast class pointer to base class and rerun the identical checks. They should pass.
+    A1* a1_class = a_class;
+    // Class A's string?
+    found = a1_class->toString().find( a_string );
+    BOOST_CHECK( found != std::string::npos );
+
+    // Class A1's string?
+    found = a1_class->toString().find( a1_string );
+    BOOST_CHECK( found != std::string::npos );
+
+    // Class B's string?
+    found = a1_class->toString().find( b_string );
+    BOOST_CHECK( found != std::string::npos );
+}
+
+// toStringNonVirt() is not virtualized. What happens when base class pointer toString() is called?
+//  no-polymorphism..
+BOOST_AUTO_TEST_CASE( A_toStringTestNonVirtual )
+{
+    // test to see if toStringNonVirt on class A works.
+    std::string a_string (" A::string ");
+    std::string a1_string (" A1::char* ");
+    std::string b_string(" B::string");
+    B b(b_string);
+
+    A* a_class = new A( a_string, b, a1_string );
+
+    // cout << "a_class.toStringNonVirt()=" << a_class->toStringNonVirt() << endl;
+    // cout << "a_class.toString()=" << a_class->toString() << endl;
+
+    // see if formulated string is correct.
+    // Class A's string?
+    std::size_t found;
+
+    found = a_class->toStringNonVirt().find(a_string);
+    BOOST_CHECK( found != std::string::npos);
+
+    // Class A1's string?
+    found = a_class->toStringNonVirt().find(a1_string);
+    BOOST_CHECK( found != std::string::npos);
+
+    // Class B's string?
+    found = a_class->toStringNonVirt().find(b_string);
+    BOOST_CHECK( found != std::string::npos);
+
+    // cast class pointer to base class.
+    A1* a1_class = a_class;
+
+    //     cout << "a1_class.toStringNonVirt()=" << a1_class->toStringNonVirt() << endl;
+    //     cout << "a1_class.toStringNonVirt()=" << a1_class->toString() << endl;
+    // see if formulated toStringNonVirt is correct.  Should call A1's toStringNonVirt(); e.g. no  polymorphism...
+    // Class A's string?
+    found = a1_class->toStringNonVirt().find(a_string);
+    BOOST_CHECK( found == std::string::npos);
+
+    // Class A1's string?
+    found = a1_class->toStringNonVirt().find(a1_string);
+    BOOST_CHECK( found != std::string::npos);
+
+    // Class B's string?
+    found = a1_class->toStringNonVirt().find(b_string);
+    BOOST_CHECK( found == std::string::npos);
+}
+
+
+//  show dynamic casting.
+//  no-polymorphism..
+BOOST_AUTO_TEST_CASE( A_DynamicCast )
 {
     std::string a_string (" A::string ");
     std::string a1_string (" A1::char* ");
-    B b_string (" B::string");
+    std::string b_string(" B::string");
+    B b(b_string);
 
-    A a_class_1( a_string, b_string, a1_string );
-    BOOST_CHECK(a_class_1.toString().c_str() != nullptr );
+    A* a_class = new A( a_string, b, a1_string );
+    A1* a1_class = a_class;                          // impliciltly cast class pointer down to base class; compiler check
+                                                     //     or
+    A1* another_a1_class = static_cast <A1*> (a_class); // static cast class pointer down to base class; compiler check
+
+    A* anotherA = dynamic_cast <A*>(a1_class);       // dynamic cast up to derived class;runtime check
+
+    // see if formulated string is correct.
+    // Class A's string?
+    std::size_t found;
+
+    found = anotherA->toStringNonVirt().find(a_string);
+    BOOST_CHECK( found != std::string::npos);
+
+    // Class A1's string?
+    found = anotherA->toStringNonVirt().find(a1_string);
+    BOOST_CHECK( found != std::string::npos);
+
+    // Class B's string?
+    found = anotherA->toStringNonVirt().find(b_string);
+    BOOST_CHECK( found != std::string::npos);
+
 }
 
 BOOST_AUTO_TEST_CASE( DiamondTest )

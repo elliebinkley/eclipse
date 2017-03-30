@@ -2,7 +2,7 @@
  * Inheritance.hpp
  *
  *  Created on: Dec 8, 2016
- *      Author: USER
+ *  Author: Larry Burley
  */
 
 #ifndef INC_INHERITANCE_HPP_
@@ -57,6 +57,7 @@ public:
     inline A1& operator=( const A1& a1 );
     inline friend bool operator==( const A1& lhs, const A1& rhs );
     inline virtual std::string toString() const  { return std::string( m_a1 ); }
+    inline std::string toStringNonVirt() const  { return std::string( m_a1 ); }
 protected:
     char* m_a1;
     A1();
@@ -98,7 +99,7 @@ A1& A1::operator=( const A1& a1 )
 
 bool operator==( const A1& lhs, const A1& rhs )  { return (! (strcmp( lhs.m_a1, rhs.m_a1 ))); }
 
-class A: A1
+class A: public A1
 {
 public:
     inline A( const std::string& s, const B& b, const std::string& a1 );
@@ -107,7 +108,8 @@ public:
     inline A&  operator=( const A& a );
     inline friend bool operator==( const A& lhs, const A& rhs );
     inline friend bool operator!=( const A& lhs, const A& rhs ) { return (lhs == rhs); }
-    inline std::string  toString() const;
+    inline virtual std::string  toString() const override;
+    inline std::string toStringNonVirt() const;
 private:
     A();
     std::string m_a;
@@ -150,6 +152,14 @@ inline bool operator==( const A& lhs, const A& rhs )
 }
 
 std::string A::toString() const
+{
+    stringstream ss;
+    ss << "A::m_a=" << m_a.c_str() << " A::m_b=" << m_b->toString()
+            << " A:A1::m_a1=" << A1::toString() << endl;
+    return ss.str();
+}
+
+std::string A::toStringNonVirt() const
 {
     stringstream ss;
     ss << "A::m_a=" << m_a.c_str() << " A::m_b=" << m_b->toString()
@@ -245,7 +255,7 @@ private:
 // The compiler catches is with the error:
 // virtual 06:26: error: 'Mammal' is an ambiguous base of 'Bear'
 // To fix this, make Mammal a virtual class in Herbivore and Carnivore declaration and then in the constructor,
-// initialize base Mammal.
+// initialize base class Mammal.
 class Bear: public Carnivore, public Herbivore
 {
 public:
