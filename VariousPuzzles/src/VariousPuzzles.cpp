@@ -25,6 +25,8 @@ extern void duplicateEntries();
 extern void validatekBinaryTree();
 extern void ransomNotePuzzle();
 extern void triesPuzzle();
+extern void triesPuzzle();
+extern void LinkListSortedByValueAndInsertion();
 
 
 void badFunction()
@@ -50,7 +52,8 @@ typedef enum PuzzleListEnum
     e_validatekBinaryTree = 8,
     e_ransomNotePuzzle = 9,
     e_triesPuzzle = 10,
-    e_last = 11
+    e_preservePuzzle = 11,
+    e_last = 12
 } puzzleEnum;
 
 const typedef struct
@@ -72,7 +75,8 @@ constexpr std::array<Puzzle, puzzleEnum::e_last> puzzleList =
         { PuzzleListEnum::e_duplicateEntries, "duplicateEntries", duplicateEntries  },
         { PuzzleListEnum::e_validatekBinaryTree, "validatekBinaryTree", validatekBinaryTree  },
         { PuzzleListEnum::e_ransomNotePuzzle, "ransomNotePuzzle", ransomNotePuzzle  },
-        { PuzzleListEnum::e_triesPuzzle, "triesPuzzle", triesPuzzle  }
+        { PuzzleListEnum::e_triesPuzzle, "triesPuzzle", triesPuzzle  },
+        { PuzzleListEnum::e_preservePuzzle, "LinkListSortedByValueAndInsertion", LinkListSortedByValueAndInsertion  }
 } };
 
 int main()
