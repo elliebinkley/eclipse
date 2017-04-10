@@ -3,11 +3,14 @@
  *
  *  Created on: Apr 5, 2017
  *      Author: Burley
- *      Description: The GNU compiler provides some built-ins for atomic operations.
+ *      Description: The GNU compiler provides some built-ins for atomic operations and the C++11 library
+ *      provides the std::atomic also
  *      Test operations with and without these atomics to see if they make a difference.
  *      See https://en.wikipedia.org/wiki/Memory_barrier
  *          https://en.wikipedia.org/wiki/Volatile_(computer_programming)#Example_of_memory-mapped_I.2FO_in_C
  *          https://gcc.gnu.org/onlinedocs/gcc/_005f_005fsync-Builtins.html#g_t_005f_005fsync-Builtins
+ *          http://en.cppreference.com/w/c/atomic
+ *          http://en.cppreference.com/w/cpp/atomic/atomic
  *
  */
 
@@ -20,6 +23,8 @@
 #include <string>
 #include <sstream>
 #include <array>
+#include <atomic>      // C++ version
+
 
 #include <SharedLibrary/inc/MyLogger.hpp>
 
@@ -30,8 +35,11 @@ constexpr unsigned int TOTAL = NUM_THREADS * COUNT;
 
 static volatile unsigned int x = 0;
 static volatile unsigned int y = 0;
+static volatile std::atomic<unsigned int> z;
+
 static volatile unsigned long long int p = 0;
 static volatile unsigned long long int q = 0;
+static volatile std::atomic<unsigned int> r;
 
 static void* threadIncrement( void* );
 
@@ -39,6 +47,9 @@ using namespace std;
 void builtIn()
 {
     T_START
+
+    z = 0;
+    r.store(0);   // same as r = 0;
 
     stringstream ss;
     ss << "size of int=" << sizeof(int) << "  sizeof(long long)=" << sizeof( long long);
@@ -58,13 +69,6 @@ void builtIn()
         pthread_exit( NULL );
     }
 
-    /*
-     ret = __getcpu(&cpu, NULL, NULL);
-
-     sched_getcpu();
-     sched_getaffinity
-     pthread_setaffinity_np;
-     */
     std::array<pthread_t*, NUM_THREADS> threadArray = { };
     for( auto &i : threadArray )
     {
@@ -76,7 +80,8 @@ void builtIn()
             std::stringstream s;
             s << "thread creation succeeded; thread=" << *i;
            // T_LOG( s.str() );
-        } else
+        }
+        else
         {
             std::stringstream s;
             s << "thread creation failed; retVal=" << retVal;
@@ -126,6 +131,12 @@ void builtIn()
 
     s.clear();
     s.str( "" );
+    s << "z=" << z << "  expected z=" << COUNT * NUM_THREADS;
+    T_LOG( s.str() )
+    assert(TOTAL == z); // with the number of threads and iterations, lack of thread safety is revealed
+
+    s.clear();
+    s.str( "" );
     s << "p=" << p << "  expected p=" << COUNT * NUM_THREADS;
     T_LOG( s.str() )
     assert(TOTAL == p );
@@ -135,6 +146,12 @@ void builtIn()
     s << "q=" << q << "  expected q=" << COUNT * NUM_THREADS;
     T_LOG( s.str() )
     assert(TOTAL != q );  // with the number of threads and iterations, lack of thread safety is revealed
+
+    s.clear();
+    s.str( "" );
+    s << "r=" << r << "  expected r=" << COUNT * NUM_THREADS;
+    T_LOG( s.str() )
+    assert(TOTAL == r );  // with the number of threads and iterations, lack of thread safety is revealed
     T_END;
 }
 
@@ -145,10 +162,13 @@ void* threadIncrement( void* data )
     {
         // test with integers
         __sync_add_and_fetch( &x, 1 );   //     thread-safe
-        y = y + 1;                       // not thread-safe
+        y++     ;                        // not thread-safe
+        z++;                             //     thread-safe
+
         // test with long long int
         __sync_add_and_fetch( &p, 1 );   //     thread-safe
-        q = q + 1;                       // not thread-safe
+        q++;                            // not  thread-safe
+        r++;                            //      thread-safe
     }
 
     std::string *termStatus = new std::string( "Done" );

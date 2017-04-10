@@ -33,8 +33,8 @@ int main()
     T_START
     printf( "Start: %s %s %d\n", __FUNCTION__, __FILE__, __LINE__ );
     builtIn();
-    signalHandling();
-    threadHandlingSimple();
+//    signalHandling();
+//    threadHandlingSimple();
     T_END
     pthread_exit( NULL );
     return 0;
