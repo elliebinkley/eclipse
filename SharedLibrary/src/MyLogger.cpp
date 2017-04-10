@@ -27,10 +27,8 @@
 #include <boost/chrono.hpp>
 #include <boost/thread.hpp>
 
-
 using namespace std;
 using namespace boost;
-
 
 void
 MyLogger::log(const char *file, const char* function, int line, const std::string& str)

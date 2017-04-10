@@ -6,8 +6,8 @@
  *      Author: Burley
  */
 
-#ifndef SMARTPOINTER_HPP_
-#define SMARTPOINTER_HPP_
+#ifndef SMARTPOINTERTEST_HPP_
+#define SMARTPOINTERTEST_HPP_
 
 #include <vector>
 #include <iostream>
@@ -75,5 +75,5 @@ namespace SmartPtr
   };
 
 } // end namespace SmartPtr
-#endif /* SMARTPOINTER_HPP_ */
+#endif /* SMARTPOINTERTEST_HPP_ */
 

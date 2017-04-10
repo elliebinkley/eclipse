@@ -11,15 +11,16 @@
 #include <memory>
 #include <cstdlib>
 #include <vector>
+#include "InheritanceCPlusPlus.hpp"
+
 #include <SharedLibrary/inc/MyLogger.hpp>
-#include <SharedLibrary/inc/Inheritance.hpp>
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
 
 using namespace std;
 using namespace boost;
-using namespace Inheritance;
+using namespace InheritanceCPlusPlus;
 
 BOOST_AUTO_TEST_SUITE( Inheritance )
 BOOST_AUTO_TEST_CASE( A1_CopyAndAssignmentTest )

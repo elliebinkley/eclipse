@@ -5,10 +5,11 @@
  *      Author: USER
  */
 
-#ifndef UNIFORMINITIALIZATIONSYNTAX_HPP_
-#define UNIFORMINITIALIZATIONSYNTAX_HPP_
+#ifndef UNIFORMINITIALIZATIONSYNTAXTEST_HPP_
+#define UNIFORMINITIALIZATIONSYNTAXTEST_HPP_
 
 #include <iostream>
+#include <sstream>
 
 namespace UniformInit
 {
@@ -62,4 +63,4 @@ namespace UniformInit
 
 } // end of name space
 
-#endif /* UNIFORMINITIALIZATIONSYNTAX_HPP_ */
+#endif /* UNIFORMINITIALIZATIONSYNTAXTEST_HPP_ */

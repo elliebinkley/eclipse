@@ -4,6 +4,7 @@
 // Version     :
 // Copyright   :
 // Description : Function Pointer Exercise.
+//             : I did this because I couldn't remember function pointer syntax during an interview.
 //             : See http://stackoverflow.com/questions/5488608/how-define-an-array-of-function-pointers-in-c
 //============================================================================
 

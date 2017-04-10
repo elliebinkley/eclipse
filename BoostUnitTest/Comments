@@ -5,22 +5,24 @@ Synopsis:  This project ( BoostUnitTest), in general, tests a lot of features th
            4. uses the keywords "default" and "delete" on constructors and assignment operators.
            5. uses operator overriding ( exercise in remembering the syntax.. )
            6. investigates the "override" identifier used to help the compiler look at virtual functions. 
-           6. uses the Boost:Test library run test suites on these features. 
+              ( See Virtualfunctions.cpp ) 
+           7. uses the Boost:Test library run test suites on these features. 
               ( See ConstructionTest.cpp as the  Master suite with the main() testRunner().
-           7.  implements a shared library ( .dll)  in Eclipse. See SharedLibrary project. 
+           8.  implements a shared library ( .dll)  in Eclipse. See SharedLibrary project. 
                I did this just as a way of actually doing a shared library in Eclipse. 
-           8. Investigate the multiple inheritance problem using the virtual keyword for class declaration. 
+           9. Investigate the multiple inheritance problem using the virtual keyword for class declaration. 
               ( See Diamond Test in InheritanceTest.cpp, and Inheritance.cpp in the shared library. )
-           8. The executable is called BoostUnitTest.exe and it depends on ShareLibary.dll.
-           9. The code was compiled in a cywin environment. 
-           
+           10. The executable is called BoostUnitTest.exe and it depends on ShareLibary.dll.
+           11. The code was compiled in a cywin environment. 
+          
 Some additional notes.
 I.  BoostUnitTest uses .dll files ( Shared libraries ).  
 There are four things to configure for running shared libraries.  
 
    1. Shared library compilation under Eclipse IDE: 
       If project A is using a shared libary:  See Project Settings->C/C++ Build -> Settings->C++ Linker->Libraries  
-      Set the name of the library and set the Library path in the appropriate tab sections. 
+      (a) Set the name of the library( Do not include the .dll suffix) 
+      (b) set the Library path in the appropriate tab sections. 
       See Project Settings->C/C++ Build -> Settings->C++ Linker. 
       The compilation output should be something like:
       g++ -L"C:\Laurence\eclipse\eclipse-cpp-neon-workspace\SharedLibrary\Debug" -o "BoostUnitTest.exe"  ./BoostSampleTest.o ./BoostSampleTest1.o   -lboost_system -lboost_unit_test_framework -lboost_thread -lboost_date_time -lboost_chrono -lSharedLibrary
@@ -49,8 +51,10 @@ There are four things to configure for running shared libraries.
       SharedLibrary.dll.softlink -> /cygdrive/c/Laurence/eclipse/eclipse-cpp-neon-workspace/SharedLibrary/Debug/SharedLibrary.dll.
       
    4. Running executables via the command line:
-      Make sure the libary is placed into a standard directory used by the linker, e.g. /user/local/lib. The standard directory must be in
-      the bash shell $PATH variable. 
+      Make sure the libary is placed into a standard directory used by the linker, e.g. /user/local/lib. 
+      The standard directory must be in the bash shell $PATH variable. 
+      From the bash command line, run as BoostUnitTest.exe --log_level=all.  This will turn on Boost logging messages. 
+           
       
    Notes:
    1. Note that the variable LD_LIBRARY_PATH only works for linking, not execution in a CYGWIN environment. 

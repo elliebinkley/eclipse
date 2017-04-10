@@ -96,10 +96,14 @@ BOOST_AUTO_TEST_CASE( VirtFunctInCtorDtor )
             BOOST_TEST_MESSAGE( "D::release() End");
         }
     };
-    BOOST_TEST_MESSAGE( "D operations");
+
+
+    BOOST_TEST_MESSAGE( "D non-compliant construction");
     D* d = new D();
-    // See if the virtual call to seize() resulted in D::seize() being invoked; it should NOT have, which is
-    // non-compliant
+    // See if the virtual call to B() -> calls seize(), which should result in D::seize() being invoked;
+    // However, gnu compiler is smart enough not to call D::seize() from B's constructor.
+    // Calling a virtual inside a constructor in non-compliant and additionally produces a non-compliant
+    // warning on compilation.
     BOOST_CHECK( !d->m_seize_called_d);
 
     // See if the virtual call to seize() resulted in D::seize() being invoked; it SHOULD have.
@@ -107,7 +111,7 @@ BOOST_AUTO_TEST_CASE( VirtFunctInCtorDtor )
     BOOST_CHECK( d->m_seize_called_d);
 
 
-    BOOST_TEST_MESSAGE( "B operations");
+    BOOST_TEST_MESSAGE( "D non-compliant construction");
     B* b = new D();
     // See if the virtual call to seize() resulted in D::seize() being invoked; it should NOT have.
     BOOST_CHECK( !(((D*)b)->m_seize_called_d));

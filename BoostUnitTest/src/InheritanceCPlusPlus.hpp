@@ -1,12 +1,13 @@
 /*
- * Inheritance.hpp
+ * InheritanceCPluPlus.hpp
  *
  *  Created on: Dec 8, 2016
  *  Author: Larry Burley
  */
 
-#ifndef INC_INHERITANCE_HPP_
-#define INC_INHERITANCE_HPP_
+
+#ifndef INHERITANCECPLUSPLUS_HPP_
+#define INHERITANCECPLUSPLUS_HPP_
 
 #include <cstddef>
 #include <string>
@@ -19,10 +20,10 @@
 #include <iostream>
 #include <sstream>
 #include <map>
-#include "Utilities.hpp"
+#include "SharedLibrary/inc/Utilities.hpp"
 
 using namespace std;
-namespace Inheritance
+namespace InheritanceCPlusPlus
 {
 
 // This section exercises constructors, and copy constructors, inheritance and overloaded operators.

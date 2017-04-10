@@ -1,8 +1,8 @@
 /*
- * HelloWorld.cpp
+ *  Simple Inout/Output example from Hacker Rack.
  *
  *  Created on: Nov 22, 2016
- *      Author: USER
+ *      Author: lburley
  */
 
 #include <cstdlib>

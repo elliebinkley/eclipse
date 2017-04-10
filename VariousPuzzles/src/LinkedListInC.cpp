@@ -1,3 +1,17 @@
+/*
+ * An example of a linked list implemented in C.
+ *
+ *  Created on: March 30, 2017
+ *      Author: lburley
+ *      Puzzle: Create two linked lists; one sorted by insertion order and teh other sorted by value. The linked list
+ *              contains values of integers.
+ *              Note: The was solved two ways, version1() and version2().  Versions 1 just inserts the values into the 
+ *              list the values are produced. Versions 2 creates the list sorted by insertion order and then creates a second list
+ *              after all values have been received. It creates the second list using qsort. 
+ *              A third way would be to do insertion sort  or merge insertion (https://de.wikipedia.org/wiki/Merge_Insertion) 
+ */
+ 
+#include <iostream>
 #include "stdio.h"
 #include "stdlib.h"
 #include "assert.h"
