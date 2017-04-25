@@ -4,7 +4,7 @@
 // Version     :
 // Copyright   : Your copyright notice
 // Description : This program plays around with POSIX threads via calls to pthread_create();
-//             : It uses mutext to protect a variable which is acessed by many threads to sum up a series of numbers.
+//             : It uses mutext to protect a variable which is accessed by many threads to sum up a series of numbers.
 //             : See https://computing.llnl.gov/tutorials/pthreads
 //             : Note 1: Printing is done via std::stringstream so that the string is formatted completely, then
 //             : streamed to cout.  This prevents strings from being interspersed between threads by the
@@ -32,6 +32,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 #include <array>
 #include <cstdlib>
 #include <vector>
@@ -56,7 +57,7 @@ static void
 printSum( void );
 
 // Thread tracking object
-#define NUM_THREADS  500
+static const unsigned int NUM_THREADS = 500;
 class TestInfo
 {
 public:
@@ -98,7 +99,7 @@ static pthread_cond_t *cv;               // condition variable
 // The updating and the waiting are mutex protected. Then the thread exists.
 // The main thread waits for each thread to complete, then when all have completed, prints out the global sum.
 
-void threadHandlingSimple(void)
+void posixThreadHandlingWithPosixMutex(void)
 {
 
    T_START
@@ -150,6 +151,7 @@ void threadHandlingSimple(void)
             std::cout << s.str();
         }
     }
+
     // no need for the data structure now.
     pthread_attr_destroy( &attr );
 
@@ -172,6 +174,10 @@ void threadHandlingSimple(void)
 
     printSum();
 
+    if( ( retVal = pthread_mutex_destroy(randomSumMutex)) != 0 )
+    {
+       cout <<  "pthread_mutex_destroy() failed=" << retVal << endl;
+    }
     if( randomSumMutex ) delete randomSumMutex;
     if( cv ) delete cv;
 
@@ -220,7 +226,8 @@ doSomething( void* data )
         pthread_exit( (void*) termStatus );
     }
 
-    // associate the key with the thread specific string.
+    // associate the key with a thread specific string.
+    // once the key is associated, then threadDestroy() will be called with the associated data passed to threadDestroy
     std::stringstream temp;
     temp << "thread=" << id << ";threadkey=" << key << endl;
     if( (retVal = pthread_setspecific( key, new std::string( temp.str() ) )) != 0 )
@@ -229,53 +236,76 @@ doSomething( void* data )
         pthread_exit( (void*) termStatus );
     }
 
-    // update the global sum; protect with mutex
+    // use try/catch so that p_thread_exit is always called. Thus, threadDestroy() will always be called.
+    // Thus the mutex will always be freed in threadDestroy().
+    try
+    {
+        // update the global sum; protect with mutex
 
-    pthread_mutex_lock( randomSumMutex );
-    int randomSumOld = 0;
-    randomSumOld = randomSum;
-    randomSum = randomSum + ((TestInfo*) (data))->randomValue;
+        // if fails, might be because this thread already owns the mutex...
+        if( (retVal = pthread_mutex_lock( randomSumMutex )) != 0 )
+        {
+            stringstream ss;
+            ss << "pthread_mutex_lock() failed=" << retVal << endl;
+            throw ss.str();
+        }
 
-    // print data
-    /*
-    std::stringstream s5 = std::stringstream();
-    s5 << "\nadding randomValue=" << ((TestInfo*) (data))->randomValue << " to randomSum="
-            << randomSumOld << " to get new randomSum=" << randomSum;
-    std::cout << s5.str() << endl;
-    */
-  //   sleep( 5 );
-    pthread_mutex_unlock( randomSumMutex );
+        randomSum = randomSum + ((TestInfo*) (data))->randomValue;
 
-    /*
-     // wait for 3 seconds
-     struct timeval now;
-     gettimeofday(&now,NULL);
+        // print data
+        /*
+        std::stringstream s5 = std::stringstream();
+        s5 << "\nadding randomValue=" << ((TestInfo*) (data))->randomValue << " to randomSum="
+                << randomSumOld << " to get new randomSum=" << randomSum;
+        std::cout << s5.str() << endl;
+        */
+        //   sleep( 5 );
 
-     struct timespec to;
-     to.tv_sec = now.tv_sec + 5;
-     to.tv_nsec =  (now.tv_usec+1000UL*1000)*1000UL;
+        // if fails, might be because the mutex is not locked by this thread...
+        if( (retVal = pthread_mutex_unlock( randomSumMutex )) != 0 )
+        {
+            stringstream ss;
+            ss << "pthread_mutex_unlock() failed=" << retVal << endl;
+            throw ss.str();
+        }
 
+        /*
+         // wait for 3 seconds
+         struct timeval now;
+         gettimeofday(&now,NULL);
 
-     if ((retVal = pthread_cond_timedwait( &fakeCond, &fakeMutex, &to)) == ETIMEDOUT)
-     {
-     cout << "timed out" << endl;
-     }
-     else
-     {
-     cout << "retval="<< retVal << endl;
-     }
-
-     pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
-     pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
-
-     //if ((retVal = pthread_cond_wait( &fakeCond, &fakeMutex)) == ETIMEDOUT)
+         struct timespec to;
+         to.tv_sec = now.tv_sec + 5;
+         to.tv_nsec =  (now.tv_usec+1000UL*1000)*1000UL;
 
 
-     pthread_mutex_lock(&fakeMutex);
-     retVal = pthread_cond_wait( &fakeCond, &fakeMutex);
-     cout << "retval="<< retVal << endl;
-     pthread_mutex_unlock(&fakeMutex);
-     */
+         if ((retVal = pthread_cond_timedwait( &fakeCond, &fakeMutex, &to)) == ETIMEDOUT)
+         {
+         cout << "timed out" << endl;
+         }
+         else
+         {
+         cout << "retval="<< retVal << endl;
+         }
+
+         pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
+         pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
+
+         //if ((retVal = pthread_cond_wait( &fakeCond, &fakeMutex)) == ETIMEDOUT)
+
+
+         pthread_mutex_lock(&fakeMutex);
+         retVal = pthread_cond_wait( &fakeCond, &fakeMutex);
+         cout << "retval="<< retVal << endl;
+         pthread_mutex_unlock(&fakeMutex);
+         */
+    }
+    catch( std::exception &e)
+    {
+        stringstream ss;
+        ss << "caught exception =" << e.what();
+        T_LOG( ss.str());
+    }
     T_END
     pthread_exit( (void*) termStatus );
     return ( NULL);
@@ -352,7 +382,8 @@ static void threadInit( void )
     }
 
     // Create a key and associate it with a destructor routine; threadDestroy()
-    // On threadExit, thread_destroy() will be called.
+    // On threadExit, thread_destroy() will be called. This enables thread specific cleanup of owned
+    // mutexes, allocated memory and other resources.
     pthread_key_t threadKey_Destruct;
     int retVal = 0;
     if( (retVal = pthread_key_create( &threadKey_Destruct, threadDestroy )) != 0 )
@@ -360,6 +391,8 @@ static void threadInit( void )
         cout << "pthread_key_create() failed; exiting:" << retVal << endl;
         pthread_exit( NULL );
     }
+
+
     // Put this key in a vector of keys; note the vector will only have one element.
     threadKeys->push_back( threadKey_Destruct );
 
@@ -367,7 +400,7 @@ static void threadInit( void )
     // when this thread is terminated.
     std::stringstream temp;
     pthread_t mainThread = pthread_self();
-    temp << "thread=" << mainThread << ";threadkey=" << threadKey_Destruct << endl;
+    temp << "thread=" << mainThread << ";threadkey=" << threadKey_Destruct  << " File="<< __FILE__ << endl;
     if( (retVal = pthread_setspecific( threadKey_Destruct, new std::string( temp.str() ) )) != 0 )
     {
         cout << "thread_setspecific(threadKey_Destruct) failed:" << retVal << endl;
@@ -375,13 +408,56 @@ static void threadInit( void )
     }
 
     // create and initialize a mutex to be used to protect variable randomSum.
-    // Upon successful initialization, the state of the mutex becomes initialized and unlocked since NULL is default
+    // Upon successful initialization, the state of the mutex becomes initialized and unlocked
     // There are two types of attributes: type ( with a default of PTHREAD_MUTEX_NORMAL and
     // robust( with a default of PTHREAD_MUTEX_ROBUST)
-    randomSumMutex = new pthread_mutex_t( PTHREAD_MUTEX_INITIALIZER );
-    if( pthread_mutex_init( randomSumMutex, NULL ) != 0 )
+
+    pthread_mutexattr_t mutex_attr;
+    if( (retVal = pthread_mutexattr_init(&mutex_attr)) != 0 )
     {
-        cout << "pthread_mutex_init() failed" << endl;
+        cout << "pthread_mutexattr_init() failed:" << retVal << endl;
+        pthread_exit( NULL );
+    }
+
+    // protect against deadlock with PTHREAD_MUTEX_ERRORCHECK
+    if( (retVal =  pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK)) != 0 )
+    {
+           cout << "pthread_mutexattr_init() failed:" << retVal << endl;
+           pthread_exit( NULL );
+    }
+
+    // set ROBUST mutex
+    /* Not in Cygwin...
+   if( (retVal =  pthread_mutexattr_setrobust(&mutex_attr, PTHREAD_MUTEX_ROBUST)) != 0 )
+   {
+          cout << "pthread_mutexattr_setrobust() failed:" << retVal << endl;
+          pthread_exit( NULL );
+   }
+   */
+
+
+    // set priority of thread holding the mutex
+    /* Not in Cygwin...
+    int x = 0;
+    if( (retVal =  pthread_mutexattr_setprotocol(&mutex_attr, PTHREAD_PRIO_NONE)) != 0 )
+    {
+           cout << "pthread_mutexattr_getprotocol() failed:" << retVal << endl;
+           pthread_exit( NULL );
+    }
+    */
+
+    randomSumMutex = new pthread_mutex_t();
+    if( ( retVal = pthread_mutex_init( randomSumMutex, &mutex_attr )) != 0 )
+    {
+        cout << "pthread_mutex_init failed:" << retVal << endl;
+        pthread_exit( NULL );
+    }
+
+    // no need for the data structure now.
+    if( (retVal = pthread_mutexattr_destroy( &mutex_attr )) != 0 )
+    {
+        cout << "pthread_mutexattr_destroy() failed:" << retVal << endl;
+        pthread_exit( NULL );
     }
 
     // create a thread condition and initialize it.
@@ -410,6 +486,10 @@ static void threadDestroy( void* ptr )
     {
         cout << "threadDestroy() ptr == NULL" << endl;
     }
+
+    // we don't want the thread to exit if it still owns the mutex, so free the mutex.
+    // pthread_mutex_unlock() fails if the current thread does not own the mutex
+    pthread_mutex_unlock( randomSumMutex );
     return;
 }
 

@@ -3,6 +3,13 @@
  *
  *  Created on: Feb 12, 2017
  *      Author: Burley
+ *      Test various types of construction methods using C++ syntax.
+ *      use keywords "default" and "deleted" on constructors.
+ *      use bracket initialization.
+ *      use move constructor
+ *      use std::move()
+ *
+ *
  */
 
 #include <iostream>

@@ -55,13 +55,15 @@ BOOST_AUTO_TEST_SUITE( UniformInitialization )
 BOOST_AUTO_TEST_CASE( ArrayInitialization )
 {
 
-    // Create multiple objects inside  once with new and initialize them inside an array
+    // Create multiple objects and initialize them inside an array
     // new for C++11.
-    A* a = new A[3]
+    A* a = new (std::nothrow) A[3]
     { A ( 3, std::string ("A0") ),
       A ( 4, std::string ("A1") ),
       A ( 5, std::string ("A2") )
     };
+
+    BOOST_CHECK( a );
 
     BOOST_CHECK( a[0].getDesc() == std::string ("A0") );
     BOOST_CHECK( a[1].getDesc() == std::string ("A1") );

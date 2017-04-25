@@ -6,8 +6,20 @@
  *      Description: 1. signal handling SIGINT
  *                   2. signal handling using SIGALARM and busy wait. startAlarmSetBusyWait()
  *                   3. signal handling using blocking POSIX semaphores startAlarmSem()
- *                   See sem_init(), sem_wait(), sem_post(), sem_getvalue(), sem_destroy()
+ *                      See sem_init(), sem_wait(), sem_post(),  sem_destroy().
+ *                      Unused:  sem_getValue();
+ *
  *                   http://en.cppreference.com/w/cpp/utility/program/sig_atomic_t
+ *
+ *                  <semaphore.h> defines POSIX semaphores, which are designed in such a way that they can be implemented
+ *                  entirely in userspace.
+ *                  POSIX semaphores also offer you the choice of whether you want a process-local semaphore
+ *                  (for use in a multi-threaded environment, or even, in some conditions, a signal handler in a
+ *                  single-threaded program) or a process-shared one, and
+ *                  in the latter case, you also have the choice whether to let the system handle allocating it in a
+ *                  shared namespace by name, or to obtain shared memory yourself and initialize it in shared memory.
+ *                  ( See http://stackoverflow.com/questions/11058045/differences-between-semaphore-h-and-sys-sem-h )
+ *                  See sem_post(), sem_wait(), sem_init().
  */
 
 #include <unistd.h>
@@ -95,14 +107,14 @@ void startAlarmSetBusyWait()
     int oldAlarmCount = 0;
 
     // set up signal handling for Alarms
-    // then SIGALRM occurs, handle with sigAlarmBusyWait() routine;
+    // when SIGALRM occurs, handle with sigAlarmBusyWait() routine;
     if( signal( SIGALRM, sigAlarmBusyWait ) == SIG_ERR )
     {
         err_sys( "SIGALRM signal error" );
     }
 
     startAlarm( 1 );
-    while( num_alarms < MAX_ALARMS )
+    while( num_alarms < MAX_ALARMS )   // poll and busy wait
     {
         if( oldAlarmCount < num_alarms )
         {
@@ -142,18 +154,21 @@ void sigAlarmSem( int signo )
     return;
 }
 
+
+// change signal handling for Alarms to use semaphores
 void startAlarmSetSem()
 {
     int numSemAlarms = 0;
 
-    // change signal handling for Alarms
-    // then SIGINT occurs, handle with sig_int() routine;
+    // when SIGALM occurs, handle with sig_int() routine;
     if( signal( SIGALRM, sigAlarmSem ) == SIG_ERR )
     {
         err_sys( "SIGALRM sigAlarmSem() signal error" );
     }
 
+    // initialize the unamed semaphore; it is local to this process and shared by threads.
     sem_init( &semAlarm, 0, 0 );
+
     while( numSemAlarms < MAX_ALARMS )
     {
         startAlarm( 2 );

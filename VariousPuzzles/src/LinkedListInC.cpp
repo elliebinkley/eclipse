@@ -181,7 +181,7 @@ void printNode(const Node* node )
 void destroy(Node* node)
 {
     if(node->nextByOrder ) destroy( node->nextByOrder );
-    delete node;
+    free( node );
 }
 
 int compareNodeValue(const void* a, const void* b)
