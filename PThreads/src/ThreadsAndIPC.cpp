@@ -28,21 +28,19 @@ using namespace std;
 
 extern void atomicsTest(void);
 extern void signalHandling(void);
-extern void threadHandlingSimple(void);
+extern void posixThreadHandlingWithPosixMutex(void);
 extern void ipcXsi(void);
 extern void threadHandlingwithMqueue();
-
 
 int main()
 {
     T_START;
-/*
+
     atomicsTest();
     signalHandling();
-    threadHandlingSimple();
-    ipcXsi();
-*/
+    posixThreadHandlingWithPosixMutex();
     threadHandlingwithMqueue();
+    ipcXsi();
 
     T_END;
     pthread_exit( NULL );
