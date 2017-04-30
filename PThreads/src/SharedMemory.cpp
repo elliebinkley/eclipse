@@ -44,10 +44,10 @@
 #include "SharedLibrary/inc/MyLogger.hpp"
 
 const unsigned int NUM_PROC = 30;   // 256 is the max number of processes allowed; see ulimit -a
-const unsigned int ITERATIONS = 100000000;
+const unsigned int ITERATIONS = 10000000;
 
 const char* MEMORY_NAME = "/memory_name";
-bool Debug = true;
+bool Debug = false;
 int fd;
 
 /* Map shared memory object */
@@ -71,6 +71,7 @@ static void createProcesses( pid_t* pidTble );
 static void finishLastProcessInit( region* const rptr );
 static void waitForProcess( pid_t* pidTble );
 static void initSharedMem( region* const rptr );
+static void flushToDisk(region* const rptr);
 static void cleanupSharedMem( region* const rptr );
 void printSharedMem( region* const rptr );
 static void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr,
@@ -91,14 +92,13 @@ void sharedMemory()
         createProcesses( pidTble );
         waitForProcess( pidTble );
 
-        assert (checkShm(rptr) );  // check sums
+        assert (checkShm( rptr ) );  // check sums
 
-//        msync();  // todo
-        // cat out the file in shared memory
-
+        flushToDisk( rptr );
+        printSharedMem( rptr );
         cleanupSharedMem( rptr );
+        rptr = nullptr;
         // get rid of shared memory
-        // unmap mmap.
         if( shm_unlink(MEMORY_NAME) )
         {
             throwARunTimeError("shm_unlink()", true, nullptr, __LINE__ );
@@ -138,14 +138,16 @@ int openShm( bool create )
 
 int doChildActions( unsigned int i )
 {
-    T_START;
+ //   T_START;
     try
     {
-
         // print out pid and i number
-        stringstream ss;
-        ss << "i=" << i << " pid=" << getpid() << " &fd=" << &fd;
-        T_LOG(ss.str().c_str());
+        if( Debug )
+        {
+            stringstream ss;
+            ss << "i=" << i << " pid=" << getpid() << " &fd=" << &fd;
+            T_LOG(ss.str().c_str());
+        }
 
         // memory map the shared memory
         region *rptr = mapSharedMem( fd );
@@ -158,14 +160,17 @@ int doChildActions( unsigned int i )
             rptr->sum[i]++;//safe
             rptr->totalSumAtomic++;
         }
-        printSharedMem( rptr );
+        if( Debug )
+        {
+            printSharedMem( rptr );
+        }
     }
     catch (exception &e)
     {
         T_LOG( e.what() );
         return( -1 );
     }
-    T_END;
+ //   T_END;
     return 0;  // success
 }
 
@@ -199,7 +204,8 @@ void initSharedMem( region* const rptr )
         throwARunTimeError( "pthread_mutexattr_init()", true, rptr, __LINE__ );
     }
 
-    //  note: PTHREAD_PROCESS_SHARED not supported becasue of Pthreads-w32
+    //  note: PTHREAD_PROCESS_SHARED not supported in Cygwin because of lack of
+    //  support in windows Pthreads-w32
     if( (ret = pthread_mutexattr_setpshared( &attr, PTHREAD_PROCESS_SHARED )) )
     {
         throwARunTimeError( "pthread_mutexattr_setpshared()", false, rptr, __LINE__ );
@@ -219,6 +225,8 @@ void initSharedMem( region* const rptr )
     {
         throwARunTimeError( "pthread_condattr_init()", true, rptr, __LINE__ );
     }
+    //  note: PTHREAD_PROCESS_SHARED not supported in Cygwin because of lack of
+    //  support in windows Pthreads-w32
     if( pthread_condattr_setpshared( &condAttr, PTHREAD_PROCESS_SHARED ) )
     {
         throwARunTimeError( "pthread_condattr_setpshared()", false, rptr, __LINE__ );
@@ -237,7 +245,7 @@ void initSharedMem( region* const rptr )
     }
 }
 
-// check totals; the onlynone we expect to match is totalSumAtomic.
+// check totals; the only one we expect to match is totalSumAtomic.
 bool checkShm( region* const rptr )
 {
     unsigned int sum = 0;
@@ -246,36 +254,36 @@ bool checkShm( region* const rptr )
         sum += rptr->sum[i];
     }
 
-    bool match;
     stringstream ss;
     if( sum != rptr->totalSum )
     {
-        printSharedMem( rptr );
-        match = false;
+        if( Debug )
+        {
+            printSharedMem( rptr );
+        }
         ss << "sums don't match: rptr->totalSum=" << rptr->totalSum
            << " sum=" << sum
            << " difference=" << sum -  rptr->totalSum;
     } else
     {
-        match = true;
         ss << "sums match: rptr->totalSum=" << rptr->totalSum;
     }
     T_LOG( ss.str().c_str() );
 
     stringstream ss1;
-    bool match1;
+    bool match;
     if( sum != rptr->totalSumAtomic )
     {
         printSharedMem( rptr );
-        match1 = false;
+        match = false;
         ss1 << "sums don't match: rptr->totalSumAtomic=" << rptr->totalSumAtomic << " sum=" << sum;
     } else
     {
-        match1 = true;
+        match = true;
         ss1 << "sums match: rptr->totalSumAtomic=" << rptr->totalSumAtomic;
     }
     T_LOG( ss1.str().c_str() );
-    return match1;
+    return match;
 }
 
 void createProcesses( pid_t* pidTble )
@@ -326,13 +334,16 @@ void finishLastProcessInit( region* const rptr )
     }
 
     rptr->numProcsInitialized++;
-    printSharedMem( rptr );
+    if( Debug )
+    {
+        printSharedMem( rptr );
+    }
 
     //  Wait until the last process  has started. Then release other processes.
     if( rptr->numProcsInitialized >= NUM_PROC )
     {
         // release all waiting threads.
-        T_LOG( "cond" );
+        if( Debug ) T_LOG( "cond" );
 
         if( pthread_cond_broadcast( &rptr->all_processes_created ) )
         {
@@ -341,18 +352,28 @@ void finishLastProcessInit( region* const rptr )
     } else
     {
         // wait till last thread is created.
-        T_LOG( "wait" );
+       if ( Debug )  T_LOG( "wait" );
 
         // settimeout 2seconds.
         struct timespec ts;
         clock_gettime( CLOCK_MONOTONIC, &ts );
         ts.tv_sec += 2;
-        //       note: pthread_cond_wait() did not work ...
-        //       if( pthread_cond_wait( &rptr->count_threshold_cv, &rptr->count_mutex) )
-        //       use pthread_cond_timedwait
-        if( pthread_cond_timedwait( &rptr->all_processes_created, &rptr->count_mutex, &ts ) )
+        //       note: pthread_cond_timedwait() always times out since Windows does not support
+        //       PTHREAD_SHARED
+        int ret;
+        if( (ret =  pthread_cond_timedwait( &rptr->all_processes_created, &rptr->count_mutex, &ts )) )
         {
-            throwARunTimeError( "pthread_cond_timedwait()", false, rptr, __LINE__ );
+            if( ret == ETIMEDOUT )
+            {
+                string s = "pthread_cond_timedwait(); ret=";
+                s.append(strerror(ret));
+                s.append(" ... continuing ...");
+                T_LOG( s.c_str() );
+            }
+            else
+            {
+                throwARunTimeError( "pthread_cond_timedwait()", true, rptr, __LINE__ );
+            }
         }
     }
     if( pthread_mutex_unlock( &rptr->count_mutex ) )
@@ -361,30 +382,40 @@ void finishLastProcessInit( region* const rptr )
     }
 }
 
-void cleanupSharedMem( region* const rptr )
+void cleanupSharedMem( region* rptr )
 {
     if( rptr )
     {
         pthread_mutex_destroy( &(rptr->count_mutex) );
         pthread_cond_destroy( &(rptr->all_processes_created) );
     }
+    munmap(rptr, sizeof( struct region) );
+}
+
+void flushToDisk( region* const rptr )
+{
+    T_START;
+    if( msync( rptr, sizeof(struct region), MS_SYNC ) )
+    {
+        throwARunTimeError( "msync()", true, rptr, __LINE__ );
+    }
+
+    T_END;
 }
 
 void printSharedMem( region* const rptr )
 {
-    if( Debug )
+    T_START;;
+    stringstream ss;
+    ss << "shm at " << rptr << endl;
+    ss << " numProcsInitialized=" << rptr->numProcsInitialized << endl;
+    ss << " totalSum=" << rptr->totalSum << endl;
+    ss << " totalSumAtomic=" << rptr->totalSumAtomic << endl;
+    for( unsigned int i = 0; i < NUM_PROC; i++ )
     {
-        stringstream ss;
-        ss << "shm at " << rptr << endl;
-        ss << " numProcsInitialized=" << rptr->numProcsInitialized << endl;
-        ss << " totalSum=" << rptr->totalSum << endl;
-        ss << " totalSumAtomic=" << rptr->totalSumAtomic << endl;
-        for( unsigned int i = 0; i < NUM_PROC; i++ )
-        {
-            ss << " sum[" << i << "]=" << rptr->sum[i] << endl;
-        }
-        T_LOG( ss.str().c_str() );
+        ss << " sum[" << i << "]=" << rptr->sum[i] << endl;
     }
+    T_LOG( ss.str().c_str() );
 }
 
 void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr, int line )
