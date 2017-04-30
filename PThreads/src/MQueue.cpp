@@ -5,12 +5,19 @@
  *      Author: Larry Burley
  *      Description: 1. Create a bunch of threads senders and receivers and connect them with a POSIX message queue.
  *                   2. Use a condition variable to start sending all at once.
- *      Todo: 1. implement on processes
- *            2. run with different random combinations.
+ *                   3. typical producer/consumer implemented using POSIX queues.
+ *                   4. todo: use mq_notify() and use a manager to parcel out messages when notified that the queue is not empty.
+ *                   5. todo: use mq_timedreceive(), mq_timedsend().
+ *                   6. mq_thread_join() can wait forever if it waits for a thread that is hung.
+ *                      This program is vulnerable to that scenario.
+ *      Todo: 1. implement on  a process basis.
+ *            2. run with different random combinations for performance metrics. Different number of threads for producer/consumer.
+ *      References:
+ *            https://users.pja.edu.pl/~jms/qnx/help/watcom/clibref/mq_overview.html#MqFlags
  */
 
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
 #include <sys/wait.h>
 #include <semaphore.h>
 #include <fcntl.h>

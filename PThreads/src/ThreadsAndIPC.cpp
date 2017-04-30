@@ -14,10 +14,17 @@
 //                e. BoostIPC                                                          ( todo )
 //                f. C++11 IPC library                                                 ( todo )
 //                g. Thread pool using select() etc..
+//                h. shared memory
+//                i. reader/writer locks on a shared data structure.
+//                j. memory barriers.
+//
+//                References:
+//                1. http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap01.html
 //=========================================================================================================
 
 #include <unistd.h>
 #include <pthread.h>
+
 
 #include <cassert>
 #include <cstdio>
@@ -31,16 +38,20 @@ extern void signalHandling(void);
 extern void posixThreadHandlingWithPosixMutex(void);
 extern void ipcXsi(void);
 extern void threadHandlingwithMqueue();
+extern void sharedMemory();
 
 int main()
 {
     T_START;
-
+/*
     atomicsTest();
     signalHandling();
     posixThreadHandlingWithPosixMutex();
     threadHandlingwithMqueue();
     ipcXsi();
+*/
+    sharedMemory();
+
 
     T_END;
     pthread_exit( NULL );

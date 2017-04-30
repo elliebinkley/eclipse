@@ -3,11 +3,12 @@
  *
  *  Created on: Apr 5, 2017
  *      Author: lburley
- *      Description: 1. signal handling SIGINT
- *                   2. signal handling using SIGALARM and busy wait. startAlarmSetBusyWait()
- *                   3. signal handling using blocking POSIX semaphores startAlarmSem()
- *                      See sem_init(), sem_wait(), sem_post(),  sem_destroy().
+ *      Description: 1. signal handling of SIGINT signal. see signalHandling()
+ *                   2. signal handling using SIGALARM and busy wait. see startAlarmSetBusyWait()
+ *                   3. signal handling using blocking POSIX semaphore. See startAlarmSem()
+ *                      References: See sem_init(), sem_wait(), sem_post(),  sem_destroy().
  *                      Unused:  sem_getValue();
+ *                   4. todo : use sigmask()..
  *
  *                   http://en.cppreference.com/w/cpp/utility/program/sig_atomic_t
  *
