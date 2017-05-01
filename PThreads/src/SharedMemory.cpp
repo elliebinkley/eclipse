@@ -1,26 +1,31 @@
 /*
- * SharedMemory.cpp
+ *  SharedMemory.cpp
  *
  *  Created on: Apr 27, 2017
  *      Author: Burley
- *      1. create a X processes via fork().
+ *      1.Create shared memory ( shm_open()  ) with a named location.  Produced a file under /def/shm ..
+ *      2.Map shared memory mmap().
+ *        Note that mlock() does not work under Cygwin.
+ *      3.create a X processes via fork() and wait via waitpid()
  *        Note that processes created using fork() do not need to use shm_open(),
  *        since forked processes inherit the memory mapped IO file descriptors.
- *        But independent, unrelated processes need to use shm_open().
- *      2. access shared memory via shm_open().
- *      3 map the memory with mmap().
- *      3. protect shared memory with shared mutexes.
- *      4. read the last token from the mmap string and add a new token to the end whichnis the old
- *         token plus one. E.g. if old token = "_45", then new appended token in "_46".
- *      5. Optionally syn memory to disk via "mmsync"
- *      6. After each process writes 20,000 times exit.
- *      7. The manager process will check the file for consistency.
+ *        ( But independent, unrelated processes need to use shm_open() to get the file descriptor. )
+ *      4. The forked processes use a conditional mutex to wait till the last process has been created before they
+ *         start doing any work.
+ *         The conditional mutex is in the shared memory area.
+ *         Note that mutexes and conditional variables cannot be PTHREAD_PROCESS_SHARED in cygwin; a
+ *         CYWGIN limitation apparently casued by windows threading.  This causes the pthread_cond_timedwait()
+ *         to time-out rather than awaken via pthread_cond_broadcast().
+ *      5. Each forked access accesses shared memory via mmap() with the inherited file descriptor. .
+ *      6. Increment several variables ; e.g. using atomics and not using atomics.
+ *      7. Once all forked processes have finished, the manager process will check if the sums match.
  *
  *      References:
  *      1. shm_open,  shm_unlink  -  create/open  or  unlink POSIX shared memory
  *      2. mmap, munmap, mmsync() - map or unmap files or sync devices into memory
  *      3. pthread_cond_waittimed(), pthread_cond_broadcast()
  *      4. pthread_mutex_lock(), pthread_mutex_unlock()
+ *      See https://www3.physnet.uni-hamburg.de/physnet/Tru64-Unix/HTML/APS33DTE/DOCU_004.HTM
  */
 
 #include <pthread.h>
@@ -68,11 +73,11 @@ static int openShm( bool create );
 static bool checkShm( region* const rptr );
 static region* mapSharedMem( int fd );
 static void createProcesses( pid_t* pidTble );
-static void finishLastProcessInit( region* const rptr );
+static void waitForAllProcessesToInit( region* const rptr );
 static void waitForProcess( pid_t* pidTble );
 static void initSharedMem( region* const rptr );
-static void flushToDisk(region* const rptr);
-static void cleanupSharedMem( region* const rptr );
+static void flushToDisk( region* const rptr );
+static void cleanupSharedMem( region** const rptr );
 void printSharedMem( region* const rptr );
 static void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr,
                                 int line );
@@ -92,22 +97,23 @@ void sharedMemory()
         createProcesses( pidTble );
         waitForProcess( pidTble );
 
-        assert (checkShm( rptr ) );  // check sums
+        assert( checkShm( rptr ) ); // check sums
 
         flushToDisk( rptr );
         printSharedMem( rptr );
-        cleanupSharedMem( rptr );
-        rptr = nullptr;
+        cleanupSharedMem( &rptr );
+
         // get rid of shared memory
         if( shm_unlink(MEMORY_NAME) )
         {
             throwARunTimeError("shm_unlink()", true, nullptr, __LINE__ );
         }
+        T_LOG( " SUCCESS!! ");
     }
     catch ( std::exception &ex)
     {
         T_LOG("caught exception");
-        cleanupSharedMem( rptr );
+        cleanupSharedMem( &rptr );
         shm_unlink(MEMORY_NAME);
         T_LOG( ex.what() );
     }
@@ -138,7 +144,7 @@ int openShm( bool create )
 
 int doChildActions( unsigned int i )
 {
- //   T_START;
+    //   T_START;
     try
     {
         // print out pid and i number
@@ -146,31 +152,31 @@ int doChildActions( unsigned int i )
         {
             stringstream ss;
             ss << "i=" << i << " pid=" << getpid() << " &fd=" << &fd;
-            T_LOG(ss.str().c_str());
+            T_LOG( ss.str().c_str() );
         }
 
         // memory map the shared memory
         region *rptr = mapSharedMem( fd );
 
-        finishLastProcessInit(rptr);
+        waitForAllProcessesToInit( rptr );
 
-        for( unsigned int k = 0; k < ITERATIONS; k++)
+        for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
-            rptr->totalSum++;       // unsafe??
-            rptr->sum[i]++;//safe
-            rptr->totalSumAtomic++;
+            rptr->totalSum++;       // not process safe..
+            rptr->sum[i]++;         // safe, since process specific.
+            rptr->totalSumAtomic++;         //  safe since protected with std::atomic<>
         }
         if( Debug )
         {
             printSharedMem( rptr );
         }
     }
-    catch (exception &e)
+    catch( exception &e )
     {
         T_LOG( e.what() );
-        return( -1 );
+        return (-1);
     }
- //   T_END;
+    //   T_END;
     return 0;  // success
 }
 
@@ -178,12 +184,29 @@ region* mapSharedMem( int fd )
 {
     // memory map the shared memory
     region *rptr = nullptr;
-    rptr = (region*) (mmap( NULL, sizeof(struct region),
+    long pg_size = sysconf( _SC_PAGE_SIZE );
+    assert( pg_size >= sizeof(struct region) );  // make sure a page is larger than what we need
+
+    rptr = (region*) (mmap( NULL, pg_size,
     PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0 ));
     if( rptr == MAP_FAILED )
     {
         throwARunTimeError( "mmap()", true, rptr, __LINE__ );
     }
+
+    // mlock() does not work for memory mapped regions.  Works for the heap though.. Weird.
+    region* ptr = (region*) malloc( sizeof(struct region) );
+    // lock into memory; disable paging...
+    if( mlock( ptr, sizeof(struct region) ) )
+    {
+        throwARunTimeError( "mlock()", true, rptr, __LINE__ );
+    }
+    if( munlock( ptr, sizeof(struct region) ) )
+    {
+        throwARunTimeError( "mlock()", true, rptr, __LINE__ );
+    }
+    free( ptr );
+
     return rptr;
 }
 
@@ -261,9 +284,8 @@ bool checkShm( region* const rptr )
         {
             printSharedMem( rptr );
         }
-        ss << "sums don't match: rptr->totalSum=" << rptr->totalSum
-           << " sum=" << sum
-           << " difference=" << sum -  rptr->totalSum;
+        ss << "sums don't match: rptr->totalSum=" << rptr->totalSum << " sum=" << sum
+                << " difference=" << sum - rptr->totalSum;
     } else
     {
         ss << "sums match: rptr->totalSum=" << rptr->totalSum;
@@ -325,7 +347,7 @@ void waitForProcess( pid_t* pidTble )
     }
 }
 
-void finishLastProcessInit( region* const rptr )
+void waitForAllProcessesToInit( region* const rptr )
 {
     if( pthread_mutex_lock( &rptr->count_mutex ) )
     {
@@ -352,7 +374,7 @@ void finishLastProcessInit( region* const rptr )
     } else
     {
         // wait till last thread is created.
-       if ( Debug )  T_LOG( "wait" );
+        if( Debug ) T_LOG( "wait" );
 
         // settimeout 2seconds.
         struct timespec ts;
@@ -361,16 +383,15 @@ void finishLastProcessInit( region* const rptr )
         //       note: pthread_cond_timedwait() always times out since Windows does not support
         //       PTHREAD_SHARED
         int ret;
-        if( (ret =  pthread_cond_timedwait( &rptr->all_processes_created, &rptr->count_mutex, &ts )) )
+        if( (ret = pthread_cond_timedwait( &rptr->all_processes_created, &rptr->count_mutex, &ts )) )
         {
             if( ret == ETIMEDOUT )
             {
                 string s = "pthread_cond_timedwait(); ret=";
-                s.append(strerror(ret));
-                s.append(" ... continuing ...");
+                s.append( strerror( ret ) );
+                s.append( " ... continuing ..." );
                 T_LOG( s.c_str() );
-            }
-            else
+            } else
             {
                 throwARunTimeError( "pthread_cond_timedwait()", true, rptr, __LINE__ );
             }
@@ -382,14 +403,19 @@ void finishLastProcessInit( region* const rptr )
     }
 }
 
-void cleanupSharedMem( region* rptr )
+void cleanupSharedMem( region** rptr )
 {
-    if( rptr )
+    if( *rptr )
     {
-        pthread_mutex_destroy( &(rptr->count_mutex) );
-        pthread_cond_destroy( &(rptr->all_processes_created) );
+        pthread_mutex_destroy( &((*rptr)->count_mutex) );
+        pthread_cond_destroy( &((*rptr)->all_processes_created) );
+        if( munmap( *rptr, sizeof(struct region) ) )
+        {
+            throwARunTimeError( "munmap()", false, *rptr, __LINE__ );
+        }
     }
-    munmap(rptr, sizeof( struct region) );
+    *rptr = nullptr;
+
 }
 
 void flushToDisk( region* const rptr )
@@ -420,16 +446,16 @@ void printSharedMem( region* const rptr )
 
 void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr, int line )
 {
+    if( rptr ) rptr->numErrors++;
     stringstream ss;
     ss << "Line#=" << line << " " << functionName << " failed; perror=" << strerror( errno );
-    T_LOG( ss.str().c_str() );
-    if( rptr ) rptr->numErrors++;
     if( doThrow )
     {
         throw(std::runtime_error( ss.str().c_str() ));
     } else
     {
-        T_LOG( "..continuing.." );
+        ss << "..continuing..";
     }
+    T_LOG( ss.str().c_str() );
     return;
 }
