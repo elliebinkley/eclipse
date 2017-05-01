@@ -185,7 +185,7 @@ region* mapSharedMem( int fd )
     // memory map the shared memory
     region *rptr = nullptr;
     long pg_size = sysconf( _SC_PAGE_SIZE );
-    assert( pg_size >= sizeof(struct region) );  // make sure a page is larger than what we need
+    assert( pg_size >= (long ) (sizeof(struct region)) ); // make sure a page is larger than what we need
 
     rptr = (region*) (mmap( NULL, pg_size,
     PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0 ));
@@ -231,7 +231,16 @@ void initSharedMem( region* const rptr )
     //  support in windows Pthreads-w32
     if( (ret = pthread_mutexattr_setpshared( &attr, PTHREAD_PROCESS_SHARED )) )
     {
-        throwARunTimeError( "pthread_mutexattr_setpshared()", false, rptr, __LINE__ );
+        if( ret == EINVAL )
+        {
+            string s = "pthread_mutexattr_setpshared(); ret=";
+            s.append( strerror( ret ) );
+            s.append( " ... continuing ..." );
+            T_LOG( s.c_str() );
+        } else
+        {
+            throwARunTimeError( "pthread_mutexattr_setpshared()", false, rptr, __LINE__ );
+        }
     }
     if( pthread_mutex_init( &rptr->count_mutex, &attr ) )
     {
@@ -250,9 +259,18 @@ void initSharedMem( region* const rptr )
     }
     //  note: PTHREAD_PROCESS_SHARED not supported in Cygwin because of lack of
     //  support in windows Pthreads-w32
-    if( pthread_condattr_setpshared( &condAttr, PTHREAD_PROCESS_SHARED ) )
+    if( (ret = pthread_condattr_setpshared( &condAttr, PTHREAD_PROCESS_SHARED )) )
     {
-        throwARunTimeError( "pthread_condattr_setpshared()", false, rptr, __LINE__ );
+        if( ret == EINVAL )
+        {
+            string s = "pthread_condattr_setpshared(); ret=";
+            s.append( strerror( ret ) );
+            s.append( " ... continuing ..." );
+            T_LOG( s.c_str() );
+        } else
+        {
+            throwARunTimeError( "pthread_condattr_setpshared()", false, rptr, __LINE__ );
+        }
     }
     if( pthread_condattr_setclock( &condAttr, CLOCK_MONOTONIC ) )
     {
@@ -415,7 +433,6 @@ void cleanupSharedMem( region** rptr )
         }
     }
     *rptr = nullptr;
-
 }
 
 void flushToDisk( region* const rptr )
@@ -431,7 +448,6 @@ void flushToDisk( region* const rptr )
 
 void printSharedMem( region* const rptr )
 {
-    T_START;;
     stringstream ss;
     ss << "shm at " << rptr << endl;
     ss << " numProcsInitialized=" << rptr->numProcsInitialized << endl;
