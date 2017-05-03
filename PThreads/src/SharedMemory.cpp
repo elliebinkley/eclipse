@@ -780,19 +780,6 @@ void printSharedMem( region* const rptr )
                 << ratio << endl;
     }
 
-    /*
-     ss << " totalSum=" << rptr->totalSum << endl;
-     ss << "      elapsedTime=" << rptr->test[1].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
-
-     ss << " totalSumAtomic=" << rptr->totalSumAtomic << endl;
-     ss << "      elapsedTime=" << rptr->test[2].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
-
-     ss << " totalSum_Named_Sem=" << rptr->totalSum_Named_Sem << endl;
-     ss << "      elapsedTime=" << rptr->test[3].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
-
-     ss << " totalSum_Unamed_Sem=" << rptr->totalSum_Unamed_Sem << endl;
-     ss << "      elapsedTime=" << rptr->test[4].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
-     */
     T_LOG( ss.str().c_str() );
 }
 

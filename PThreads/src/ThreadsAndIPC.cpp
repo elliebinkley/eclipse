@@ -25,7 +25,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-
 #include <cassert>
 #include <cstdio>
 
@@ -33,24 +32,23 @@
 
 using namespace std;
 
-extern void atomicsTest(void);
-extern void signalHandling(void);
-extern void posixThreadHandlingWithPosixMutex(void);
-extern void semaphores(void);
+extern void atomicsTest( void );
+extern void signalHandling( void );
+extern void posixThreadHandlingWithPosixMutex( void );
+extern void semaphores( void );
 extern void threadHandlingwithMqueue();
 extern void sharedMemory();
 
 int main()
 {
     T_START;
- //   atomicsTest();
-  //  signalHandling();
- //   posixThreadHandlingWithPosixMutex();
-//    threadHandlingwithMqueue();
-//   semaphores();
 
+    atomicsTest();
+    signalHandling();
+    posixThreadHandlingWithPosixMutex();
+    threadHandlingwithMqueue();
+    semaphores();
     sharedMemory();
-
 
     T_END;
     pthread_exit( NULL );
