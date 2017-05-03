@@ -25,6 +25,9 @@
 
 #include <unistd.h>
 #include <semaphore.h>
+#include <cerrno>
+#include <cstring>
+
 
 #include <csignal>
 #include <climits>
@@ -33,6 +36,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <string>
 
 using namespace std;
 
@@ -139,7 +143,9 @@ void startAlarm( unsigned int seconds )
     if( alarm( seconds ) != 0 )
     {
         // outstanding alarm still there. Race condition??
-        printf("error\n");
+        string s = "alarm() failed; perror=";
+        s.append(strerror( errno ));
+        printf("%s",  s.c_str() );
     }
 }
 

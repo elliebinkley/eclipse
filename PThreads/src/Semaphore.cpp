@@ -58,7 +58,7 @@ static void syncProcessesWithNamedPosixSemaphore();
 static void syncPosixThreadsWithUnnamedPosixSemaphore();
 static int runChildProcesses();
 
-void ipcXsi()
+void semaphores()
 {
     T_START;
 
@@ -66,7 +66,6 @@ void ipcXsi()
     syncProcessesWithNamedPosixSemaphore();
 
     T_END;
-    pthread_exit(NULL);
 }
 
 void syncProcessesWithNamedPosixSemaphore()
@@ -93,7 +92,7 @@ void syncProcessesWithNamedPosixSemaphore()
                 throw( std::runtime_error( s.c_str()));
             }
 
-            // check value; if the persistent semapahore was already created prior to this program running
+            // check value; if the persistent semaphore was already created prior to this program running
             // and had a value other than 1, destroy it and start over...
             int sval = 0;
             if( sem_getvalue(sem, &sval) )
@@ -103,23 +102,20 @@ void syncProcessesWithNamedPosixSemaphore()
                 T_LOG(s.c_str());
                 throw std::runtime_error(s.c_str());
             }
+            if( sval != 1 )
+            {
+                stringstream ss;
+                ss << "destroying and re-creating semaphore; semValue=" << sval;
+                T_LOG(ss.str());
+                sem_unlink( SEM_NAME );  // destroys persistent semaphore
+                continue;
+            }
             else
             {
-                if( sval != 1 )
-                {
-                    stringstream ss;
-                    ss << "destroying and re-creating semaphore; semValue=" << sval;
-                    T_LOG(ss.str());
-                    sem_unlink( SEM_NAME );  // destroys persistent semaphore
-                    continue;
-                }
-                else
-                {
-                    stringstream ss;
-                    ss << "Semaphore=" << sem;
-                    T_LOG(ss.str());
-                    initGood = true;
-                }
+                stringstream ss;
+                ss << "Semaphore=" << sem;
+                T_LOG(ss.str());
+                initGood = true;
             }
         }
         // part 2. fork processes
@@ -142,7 +138,7 @@ void syncProcessesWithNamedPosixSemaphore()
         }
 
         // I am the parent
-        // part 3. wiat for child processes.
+        // part 3. wait for child processes.
         T_LOG("Parent: Waiting for Child to complete.");
 
         int status, ret;
@@ -186,8 +182,18 @@ void syncProcessesWithNamedPosixSemaphore()
     // clean up named semaphore
     if( sem )
     {
-        sem_close (sem);
-        sem_unlink( SEM_NAME );  // destroys persistent semaphore
+        if( sem_close( sem ) )
+        {
+            string s = "sem_close() failed; errno=";
+            s.append(strerror(errno));
+            T_LOG( s.c_str() );
+        }
+        if( sem_unlink( SEM_NAME ) )  // destroys persistent semaphore
+        {
+            string s = "sem_unlink() failed; errno=";
+            s.append(strerror(errno));
+            T_LOG( s.c_str() );
+        }
     }
     T_END;
 }
@@ -210,13 +216,31 @@ int runChildProcesses()
         ss << "Semaphore=" << sem;
         T_LOG(ss.str());
     }
-    sem_wait( sem );
+    if( sem_wait( sem ) )
+    {
+        string s="sem_wait failed; errno=";
+        s.append(strerror(errno));
+        T_LOG( s.c_str() );
+        exit(1);
+    }
     T_LOG("got Semaphore mySem" );
     sleep(3);
 
     T_LOG("post Semaphore mySem" );
-    sem_post(sem);
-    sem_close( sem );
+    if( sem_post(sem) )
+    {
+        string s="sem_post failed; errno=";
+        s.append(strerror(errno));
+        T_LOG( s.c_str() );
+        exit(1);
+    }
+    if( sem_close( sem ) )
+    {
+        string s="sem_close failed; errno=";
+       s.append(strerror(errno));
+       s.append("  .. continuing ..");
+       T_LOG( s.c_str() );
+    }
 
     T_END;
     exit(0);

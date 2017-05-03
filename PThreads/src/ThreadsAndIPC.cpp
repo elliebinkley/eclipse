@@ -36,20 +36,19 @@ using namespace std;
 extern void atomicsTest(void);
 extern void signalHandling(void);
 extern void posixThreadHandlingWithPosixMutex(void);
-extern void ipcXsi(void);
+extern void semaphores(void);
 extern void threadHandlingwithMqueue();
 extern void sharedMemory();
 
 int main()
 {
     T_START;
-/*
-    atomicsTest();
-    signalHandling();
-    posixThreadHandlingWithPosixMutex();
-    threadHandlingwithMqueue();
-    ipcXsi();
-*/
+ //   atomicsTest();
+  //  signalHandling();
+ //   posixThreadHandlingWithPosixMutex();
+//    threadHandlingwithMqueue();
+//   semaphores();
+
     sharedMemory();
 
 

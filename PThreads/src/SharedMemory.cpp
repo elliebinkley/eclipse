@@ -34,11 +34,15 @@
 #include <sys/stat.h>        /* For mode constants */
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <semaphore.h>       // sem_t
+#include <fcntl.h>           // O_CREAT
 
 #include <cstdio>
 #include <unistd.h>
 #include <cassert>
 #include <cstring>
+#include <ctime>
+#include "time.h"
 #include <fcntl.h>           /* For O_* constants */
 
 #include <string>
@@ -48,23 +52,40 @@
 
 #include "SharedLibrary/inc/MyLogger.hpp"
 
-const unsigned int NUM_PROC = 30;   // 256 is the max number of processes allowed; see ulimit -a
-const unsigned int ITERATIONS = 10000000;
+const unsigned int NUM_PROC = 90;   // 256 is the max number of processes allowed; see ulimit -a
+const unsigned int ITERATIONS = 1000;
+const unsigned int NUM_TESTS = 5;
 
 const char* MEMORY_NAME = "/memory_name";
+const char* TOTAL_SUM_SEM = "/total_sum_named_semaphore";   // named semaphore
+
 bool Debug = false;
 int fd;
 
-/* Map shared memory object */
+/* Shared memory structures  */
+struct testInstance
+{
+    sem_t startTest;
+    sem_t finishTest;
+    char name[100];
+    volatile std::atomic<unsigned int> numProcsFinishedTest;
+    volatile std::atomic<uint64_t> elapsedTime;
+    volatile std::atomic<unsigned long> sumResult;
+};
+
 struct region
 { /* Defines "structure" of shared memory */
-    volatile std::atomic<unsigned long> sum[NUM_PROC];
-    volatile std::atomic<unsigned long> totalSumAtomic;
+    volatile std::atomic<unsigned long> sum[NUM_PROC];  // test 0
+    volatile unsigned long totalSum;                    // test 1
+    volatile std::atomic<unsigned long> totalSumAtomic; // test 2
+    volatile unsigned long totalSum_Unamed_Sem;         // test 3; protected by unNamedSem
+    volatile unsigned long totalSum_Named_Sem;   // test 4; protected by "total_sum_named_semaphore"
     volatile std::atomic<unsigned int> numProcsInitialized;
-    volatile unsigned long totalSum;
     volatile std::atomic<unsigned int> numErrors;
     pthread_mutex_t count_mutex;                 // condition variable mutex
     pthread_cond_t all_processes_created;        // condition variable.
+    sem_t unNamedSem;                            // unnamed Semaphore
+    struct testInstance test[NUM_TESTS];         //
 };
 
 // functions in this file
@@ -78,7 +99,15 @@ static void waitForProcess( pid_t* pidTble );
 static void initSharedMem( region* const rptr );
 static void flushToDisk( region* const rptr );
 static void cleanupSharedMem( region** const rptr );
-void printSharedMem( region* const rptr );
+static void printSharedMem( region* const rptr );
+static sem_t* initSemaphores( region* const rptr );
+static void closeSemaphores( region* const rptr, sem_t* namedSemPtr );
+static void signalIfTestsDone( region* const rptr, unsigned int i );
+static void signalStartTest( region* const rptr, unsigned int i );
+static void waitForStartTestSignal( region* const rptr, unsigned int i );
+static void waitForTestToFinishSignal( region* const rptr, timespec ts_start, unsigned int i );
+static void coordinateTests( region* const rptr );
+
 static void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr,
                                 int line );
 
@@ -89,18 +118,23 @@ void sharedMemory()
     T_START;
     pid_t pidTble[NUM_PROC];
     region* rptr = nullptr;
+    sem_t* namedSemPtr = nullptr;
     try
     {
         fd = openShm( true );
         rptr = mapSharedMem( fd );
         initSharedMem( rptr );
+        namedSemPtr = initSemaphores( rptr );
+
         createProcesses( pidTble );
+        coordinateTests( rptr );
         waitForProcess( pidTble );
 
         assert( checkShm( rptr ) ); // check sums
 
         flushToDisk( rptr );
         printSharedMem( rptr );
+        closeSemaphores( rptr, namedSemPtr );
         cleanupSharedMem( &rptr );
 
         // get rid of shared memory
@@ -108,13 +142,19 @@ void sharedMemory()
         {
             throwARunTimeError("shm_unlink()", true, nullptr, __LINE__ );
         }
+        if( sem_unlink(TOTAL_SUM_SEM ) )
+        {
+            throwARunTimeError("sem_unlink()", true, nullptr, __LINE__ );
+        }
         T_LOG( " SUCCESS!! ");
     }
     catch ( std::exception &ex)
     {
         T_LOG("caught exception");
+        closeSemaphores( rptr, namedSemPtr );
         cleanupSharedMem( &rptr );
-        shm_unlink(MEMORY_NAME);
+        shm_unlink( MEMORY_NAME );
+        sem_unlink( TOTAL_SUM_SEM );
         T_LOG( ex.what() );
     }
 
@@ -142,7 +182,7 @@ int openShm( bool create )
     return fd;
 }
 
-int doChildActions( unsigned int i )
+int doChildActions( unsigned int procNum )
 {
     //   T_START;
     try
@@ -151,25 +191,99 @@ int doChildActions( unsigned int i )
         if( Debug )
         {
             stringstream ss;
-            ss << "i=" << i << " pid=" << getpid() << " &fd=" << &fd;
+            ss << "procNum =" << procNum << " pid=" << getpid() << " &fd=" << &fd;
             T_LOG( ss.str().c_str() );
         }
 
         // memory map the shared memory
-        region *rptr = mapSharedMem( fd );
+        region* const rptr = mapSharedMem( fd );
+
+        // get Named semaphore
+        sem_t* namedSemPtr;
+        if( (namedSemPtr = sem_open( TOTAL_SUM_SEM, O_RDWR )) == SEM_FAILED )
+        {
+            throwARunTimeError( "sem_open()", true, nullptr, __LINE__ );
+        }
 
         waitForAllProcessesToInit( rptr );
 
+        // test 0
+        unsigned int testId = 0;
+        waitForStartTestSignal( rptr, testId );
+
+        stringstream ss;
+        ss << "running test[" << testId << "]=" << rptr->test[testId].name;
+        T_LOG( ss.str().c_str() );
         for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
-            rptr->totalSum++;       // not process safe..
-            rptr->sum[i]++;         // safe, since process specific.
+            rptr->sum[procNum]++;                 // safe, since process specific.
+        }
+        signalIfTestsDone( rptr, testId );
+
+        // test 1
+        testId++;
+        assert( testId <= NUM_TESTS );
+        waitForStartTestSignal( rptr, testId );
+
+        ss.str("");
+        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+        T_LOG( ss.str().c_str() );
+        for( unsigned int k = 0; k < ITERATIONS; k++ )
+        {
+            rptr->totalSum++;                // not process/thread-safe..
+        }
+        signalIfTestsDone( rptr, testId );
+
+        // test 2
+        testId++;
+        assert( testId <= NUM_TESTS );
+        waitForStartTestSignal( rptr, testId );
+        ss.str("");
+        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+        T_LOG( ss.str().c_str() );
+        for( unsigned int k = 0; k < ITERATIONS; k++ )
+        {
             rptr->totalSumAtomic++;         //  safe since protected with std::atomic<>
         }
+        signalIfTestsDone( rptr, testId );
+
+        // test 3
+        testId++;
+        assert( testId <= NUM_TESTS );
+        waitForStartTestSignal( rptr, testId );
+        ss.str("");
+        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+        T_LOG( ss.str().c_str() );
+        for( unsigned int k = 0; k < ITERATIONS; k++ )
+        {
+            sem_wait( namedSemPtr );
+            rptr->totalSum_Named_Sem++;       // protected with named sem
+            sem_post( namedSemPtr );
+        }
+        signalIfTestsDone( rptr, testId );
+
+        // test 4
+        testId++;
+        assert( testId <= NUM_TESTS );
+        waitForStartTestSignal( rptr, testId );
+        ss.str("");
+        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+        T_LOG( ss.str().c_str() );
+        for( unsigned int k = 0; k < ITERATIONS; k++ )
+        {
+            sem_wait( &(rptr->unNamedSem) );
+            rptr->totalSum_Unamed_Sem++;      // protected with unnamed sem
+            sem_post( &(rptr->unNamedSem) );
+        }
+        signalIfTestsDone( rptr, testId );
+
         if( Debug )
         {
             printSharedMem( rptr );
         }
+
+        closeSemaphores( nullptr, namedSemPtr );
+
     }
     catch( exception &e )
     {
@@ -213,12 +327,65 @@ region* mapSharedMem( int fd )
 void initSharedMem( region* const rptr )
 {
     int ret = 0;
-    rptr->numProcsInitialized = 0;
-    rptr->totalSum = 0;
-    for( unsigned int i = 0; i < NUM_PROC; i++ )
+
+    for( unsigned int i = 0; i < NUM_TESTS; i++ )
     {
-        rptr->sum[i] = 0;
+        rptr->test[i].numProcsFinishedTest = 0;
+        rptr->test[i].sumResult = 0;
+
+        if( sem_init( &(rptr->test[i].finishTest), 1, 0 ) == -1 )
+        {
+            throwARunTimeError( "sem_open()", true, nullptr, __LINE__ );
+        }
+        if( sem_init( &(rptr->test[i].startTest), 1, 0 ) == -1 )
+        {
+            throwARunTimeError( "sem_open()", true, nullptr, __LINE__ );
+        }
+        switch( i )
+        {
+        case 0:
+        {
+            for( unsigned int k = 0; k < NUM_PROC; k++ )
+            {
+                rptr->sum[k] = 0;
+            }
+            strcpy( rptr->test[i].name, "sumForEachProcess" );
+
+            break;
+        }
+        case 1:
+        {
+            strcpy( rptr->test[i].name, "totalSum" );
+            rptr->totalSum = 0;
+            break;
+        }
+        case 2:
+        {
+            rptr->totalSumAtomic = 0;
+            strcpy( rptr->test[i].name, "totalSumAtomic" );
+            break;
+        }
+        case 3:
+        {
+            rptr->totalSum_Named_Sem = 0;
+            strcpy( rptr->test[i].name, "totalSum_Named_Sem" );
+            break;
+        }
+        case 4:
+        {
+            rptr->totalSum_Unamed_Sem = 0;
+            strcpy( rptr->test[i].name, "totalSum_UNnamed_Sem" );
+            break;
+        }
+        default:
+        {
+            assert( false );
+            break;
+        }
+        }
     }
+    rptr->numErrors = 0;
+    rptr->numProcsInitialized = 0;
 
     // Initialize mutex
     pthread_mutexattr_t attr;
@@ -286,6 +453,136 @@ void initSharedMem( region* const rptr )
     }
 }
 
+sem_t* initSemaphores( region* const rptr )
+{
+    // init named semaphore
+    sem_t* namedSemPtr;
+    int oflag = (O_CREAT | O_EXCL | O_RDWR);
+    if( (namedSemPtr = sem_open( TOTAL_SUM_SEM, oflag, 0644, 1 )) == SEM_FAILED )
+    {
+        throwARunTimeError( "sem_open()", true, nullptr, __LINE__ );
+    }
+
+    // init unnamed sempahore
+    if( sem_init( &(rptr->unNamedSem), 1, 1 ) == -1 )
+    {
+        throwARunTimeError( "sem_open()", true, nullptr, __LINE__ );
+    }
+
+    T_END;
+    return namedSemPtr;
+}
+
+void closeSemaphores( region* const rptr, sem_t* namedSemPtr )
+{
+    // destroy unnamed semaphore;
+    if( rptr )
+    {
+        if( sem_destroy( &(rptr->unNamedSem) ) )
+        {
+            throwARunTimeError( "sem_destroy()", false, nullptr, __LINE__ );
+        }
+    }
+
+    // close named semaphore
+    if( namedSemPtr )
+    {
+        if( sem_close( namedSemPtr ) )
+        {
+            throwARunTimeError( "sem_close()", false, nullptr, __LINE__ );
+        }
+    }
+}
+
+// processes call this to wait for the start of a new test
+void waitForStartTestSignal( region* const rptr, unsigned int i )
+{
+    T_START;
+    if( sem_wait( &(rptr->test[i].startTest) ) )
+    {
+        string s("sem_wait() on startTest failed; perror=");
+        s.append( strerror(errno) );
+        T_LOG( s.c_str() );
+        throw( s.c_str() );
+    }
+    T_END;
+}
+
+// processes call this when their test is done.
+void signalIfTestsDone( region* const rptr, unsigned int i )
+{
+    T_START;
+    if( ++(rptr->test[i].numProcsFinishedTest) >= NUM_PROC )
+    {
+        // signal main thread that all children are done.
+        if( sem_post( &(rptr->test[i].finishTest) ))
+        {
+            string s("sem_post() on finishTest failed; perror=");
+            s.append( strerror(errno) );
+            T_LOG( s.c_str() );
+            throw( s.c_str() );
+        }
+    }
+    T_END;
+}
+
+// main thread calls this to wait for the finish of the test
+void waitForTestToFinishSignal( region* const rptr, timespec ts_start, unsigned int testId )
+{
+    T_START;
+    int ret;
+    if( (ret = sem_wait( &(rptr->test[testId].finishTest) )))
+    {
+        string s("sem_wait() on finishTest failed; perror=");
+        s.append( strerror(errno) );
+        T_LOG( s.c_str() );
+        throw( s.c_str() );
+    }
+    // do the accounting...
+    struct timespec ts_finish;
+    clock_gettime( CLOCK_MONOTONIC, &ts_finish );
+    uint64_t delta_us = (ts_finish.tv_sec - ts_start.tv_sec) * 1000000 + (ts_finish.tv_nsec - ts_start.tv_nsec) / 1000;
+    stringstream ss;
+    rptr->test[testId].elapsedTime = delta_us*1000;
+    ss << rptr->test[testId].name << ":elapsed time=" << ( delta_us*1000 ) << " ms";
+    T_LOG( ss.str().c_str() );
+    T_END;
+}
+
+// main thread calls this to signal the start of a test.
+void signalStartTest( region* const rptr, unsigned int i )
+{
+    T_START;
+    struct timespec ts_start;
+    clock_gettime( CLOCK_MONOTONIC, &ts_start );
+
+    for( unsigned int k =0; k < NUM_PROC; k++ )
+    {
+        int ret;
+        if( ( ret = sem_post( &(rptr->test[i].startTest)) ))
+        {
+            string s("sem_post() failed on startTest; perror=");
+            s.append( strerror(errno) );
+            T_LOG( s.c_str() );
+            throw( s.c_str() );
+        }
+    }
+    waitForTestToFinishSignal( rptr, ts_start, i );
+    T_END;
+}
+
+void coordinateTests( region* const rptr )
+{
+    for( unsigned int testId; testId < NUM_TESTS; testId++ )
+    {
+        sleep( 5 );
+        stringstream ss;
+        ss << "starting test[" << testId << "] = " << rptr->test[testId].name;
+        T_LOG( ss.str().c_str() );
+        signalStartTest( rptr, testId );
+    }
+}
+
 // check totals; the only one we expect to match is totalSumAtomic.
 bool checkShm( region* const rptr )
 {
@@ -293,6 +590,11 @@ bool checkShm( region* const rptr )
     for( unsigned int i = 0; i < NUM_PROC; i++ )
     {
         sum += rptr->sum[i];
+    }
+    if( sum == 0 )
+    {
+        T_LOG( "SUM is zero; test failed" );
+        return false;
     }
 
     stringstream ss;
@@ -329,7 +631,7 @@ bool checkShm( region* const rptr )
 void createProcesses( pid_t* pidTble )
 {
     // create processes
-    for( unsigned int i = 0; i < NUM_PROC; i++ )
+    for( unsigned int procNum = 0; procNum < NUM_PROC; procNum++ )
     {
         pid_t pid = fork();
         if( pid == -1 )
@@ -338,12 +640,12 @@ void createProcesses( pid_t* pidTble )
             assert( false );
         } else if( pid == 0 )
         {
-            int ret = doChildActions( i );
+            int ret = doChildActions( procNum );
             exit( ret );
         } else
         {
             // parent
-            pidTble[i] = pid;
+            pidTble[procNum] = pid;
         }
     }
 }
@@ -361,7 +663,7 @@ void waitForProcess( pid_t* pidTble )
             assert( false );
         }
         assert( pid == pidTble[i] );
-        assert( result == 0 );
+        //     assert( result == 0 );
     }
 }
 
@@ -448,15 +750,49 @@ void flushToDisk( region* const rptr )
 
 void printSharedMem( region* const rptr )
 {
+
+    //  set the sums for each test for uniform printing
+    for( unsigned int k = 0; k < NUM_PROC; k++ )
+    {
+        rptr->test[0].sumResult += rptr->sum[k];
+    }
+    rptr->test[1].sumResult += rptr->totalSum;
+    rptr->test[2].sumResult += rptr->totalSumAtomic;
+    rptr->test[3].sumResult += rptr->totalSum_Named_Sem;
+    rptr->test[4].sumResult += rptr->totalSum_Unamed_Sem;
+
+    // print
     stringstream ss;
     ss << "shm at " << rptr << endl;
     ss << " numProcsInitialized=" << rptr->numProcsInitialized << endl;
-    ss << " totalSum=" << rptr->totalSum << endl;
-    ss << " totalSumAtomic=" << rptr->totalSumAtomic << endl;
-    for( unsigned int i = 0; i < NUM_PROC; i++ )
+    for( unsigned int procId = 0; procId < NUM_PROC; procId++ )
     {
-        ss << " sum[" << i << "]=" << rptr->sum[i] << endl;
+        ss << " sum[" << procId << "]=" << rptr->sum[procId] << endl;
     }
+
+    uint64_t base = rptr->test[0].elapsedTime;
+    for( unsigned int testId = 0; testId < NUM_TESTS; testId++ )
+    {
+        ss << "test[=" << testId << "]= " << rptr->test[testId].name << endl;
+        ss << "test[=" << testId << "] Sum = " << rptr->test[testId].sumResult;
+        unsigned long ratio = rptr->test[testId].elapsedTime / base;
+        ss << "      elapsedTime = " << rptr->test[testId].elapsedTime << " ms ;" << " ratio = "
+                << ratio << endl;
+    }
+
+    /*
+     ss << " totalSum=" << rptr->totalSum << endl;
+     ss << "      elapsedTime=" << rptr->test[1].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
+
+     ss << " totalSumAtomic=" << rptr->totalSumAtomic << endl;
+     ss << "      elapsedTime=" << rptr->test[2].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
+
+     ss << " totalSum_Named_Sem=" << rptr->totalSum_Named_Sem << endl;
+     ss << "      elapsedTime=" << rptr->test[3].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
+
+     ss << " totalSum_Unamed_Sem=" << rptr->totalSum_Unamed_Sem << endl;
+     ss << "      elapsedTime=" << rptr->test[4].elapsedTime << " ms ; "<< rptr->test[1].elapsedTime/base;
+     */
     T_LOG( ss.str().c_str() );
 }
 
