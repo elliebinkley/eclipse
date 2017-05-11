@@ -60,7 +60,7 @@ There are four things to configure for running shared libraries.
    1. Note that the variable LD_LIBRARY_PATH only works for linking, not execution in a CYGWIN environment. 
    2. See ldd for dynamic library dependencies
    
- II.  In Eclipse,  Properties->Run/Debug Settings -> Arguements, --log_level=all is passed upon execution. 
+ II.  In Eclipse,  Properties->Run/Debug Settings -> Arguments, --log_level=all is passed upon execution. 
    This logs a lot of stuff to the console. 
    
  

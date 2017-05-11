@@ -9,14 +9,14 @@
 //                                synchronization built-ins for atomic access  ( Atomics.cpp )
 //                c. p_threads using mutexes                                   ( ThreadHandlingSimple.cpp)
 //                d. threads and processes using POSIX message queues          ( MQueue.cpp )
-//                e. threads and processes using POSIX named/unamed semaphores ( Semaphore.cpp )
+//                e. threads using POSIX named/unamed semaphores ( Semaphore.cpp )
 //                d. IPC semaphores, shared memory ( XSI versions; formerly system V ) ( todo )
 //                e. BoostIPC                                                          ( todo )
 //                f. C++11 IPC library                                                 ( todo )
 //                g. Thread pool using select() etc..
-//                h. shared memory
-//                i. reader/writer locks on a shared data structure.
-//                j. memory barriers.
+//                h. fork processes and coordinate us9ng shared memory         ( SharedMemory.cpp )
+//                i. reader/writer locks on a shared data structure.           ( todo )
+//                j. memory barriers.                                          9 todo )
 //
 //                References:
 //                1. http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap01.html
@@ -38,9 +38,12 @@ extern void posixThreadHandlingWithPosixMutex( void );
 extern void semaphores( void );
 extern void threadHandlingwithMqueue();
 extern void sharedMemory();
+extern void conditionVariables();
+extern void threadBarrier();
 
 int main()
 {
+    printf("start\n");
     T_START;
 
     atomicsTest();
@@ -48,7 +51,11 @@ int main()
     posixThreadHandlingWithPosixMutex();
     threadHandlingwithMqueue();
     semaphores();
+
     sharedMemory();
+    conditionVariables();
+
+    threadBarrier();
 
     T_END;
     pthread_exit( NULL );

@@ -3,6 +3,18 @@
  *
  *  Created on: Apr 27, 2017
  *      Author: Burley
+ *      Description:  Program that uses shared memory and named and un-named semaphores to communicate amongst processes.
+ *      The program compares the performance of updating a shared sum total value by concurrently running
+ *      processes via
+ *      (1) non thread-safe shared memory,
+ *      (2) atomic  access to shared memory,
+ *      (3) protected  access to shared memory via
+ *          (3a) named semaphores located in shared memory. and
+ *          (3b) un-named sempahores located in shared memory.
+ *      (0) the above are compared against a baseline of individual processes accessing their own shared memory without
+ *          other threads contending for that memory. Test 0.
+ *
+ *      Steps:
  *      1.Create shared memory ( shm_open()  ) with a named location.  Produced a file under /def/shm ..
  *      2.Map shared memory mmap().
  *        Note that mlock() does not work under Cygwin.
@@ -17,12 +29,12 @@
  *         CYWGIN limitation apparently casued by windows threading.  This causes the pthread_cond_timedwait()
  *         to time-out rather than awaken via pthread_cond_broadcast().
  *      5. Each forked access accesses shared memory via mmap() with the inherited file descriptor. .
- *      6. Increment several variables ; e.g. using atomics and not using atomics.
+ *      6. Increment several variables ; e.g. using atomics and not using atomics, named and un-named semaphores.
  *      7. Once all forked processes have finished, the manager process will check if the sums match.
  *
  *      References:
  *      1. shm_open,  shm_unlink  -  create/open  or  unlink POSIX shared memory
- *      2. mmap, munmap, mmsync() - map or unmap files or sync devices into memory
+ *      2. mmap, munmap, msync()  - map or unmap files or sync devices into memory
  *      3. pthread_cond_waittimed(), pthread_cond_broadcast()
  *      4. pthread_mutex_lock(), pthread_mutex_unlock()
  *      See https://www3.physnet.uni-hamburg.de/physnet/Tru64-Unix/HTML/APS33DTE/DOCU_004.HTM
@@ -51,22 +63,23 @@
 #include <atomic>
 
 #include "SharedLibrary/inc/MyLogger.hpp"
+#include "../inc/PThreadUtilities.hpp"
 
-const unsigned int NUM_PROC = 90;   // 256 is the max number of processes allowed; see ulimit -a
-const unsigned int ITERATIONS = 1000;
-const unsigned int NUM_TESTS = 5;
+static const unsigned int NUM_PROC = 90; // 256 is the max number of processes allowed; see ulimit -a
+static const unsigned int ITERATIONS = 1000;
+static const unsigned int NUM_TESTS = 5;
 
-const char* MEMORY_NAME = "/memory_name";
-const char* TOTAL_SUM_SEM = "/total_sum_named_semaphore";   // named semaphore
+static const char* MEMORY_NAME = "/memory_name";
+static const char* TOTAL_SUM_SEM = "/total_sum_named_semaphore";   // named semaphore
 
-bool Debug = false;
-int fd;
+static bool Debug = false;
+static int fd;
 
 /* Shared memory structures  */
 struct testInstance
 {
-    sem_t startTest;
-    sem_t finishTest;
+    sem_t startTest;      // semaphore to signal that the process can start running the test.
+    sem_t finishTest; // signals to the main thread that the child processes are done running a test.
     char name[100];
     volatile std::atomic<unsigned int> numProcsFinishedTest;
     volatile std::atomic<uint64_t> elapsedTime;
@@ -75,16 +88,14 @@ struct testInstance
 
 struct region
 { /* Defines "structure" of shared memory */
-    volatile std::atomic<unsigned long> sum[NUM_PROC];  // test 0
-    volatile unsigned long totalSum;                    // test 1
-    volatile std::atomic<unsigned long> totalSumAtomic; // test 2
+    volatile std::atomic<unsigned long> sum[NUM_PROC]; // test 0; each process has their own counter
+    volatile unsigned long totalSum;                    // test 1; non-thread safe variable.
+    volatile std::atomic<unsigned long> totalSumAtomic; // test 2; atomic access
     volatile unsigned long totalSum_Unamed_Sem;         // test 3; protected by unNamedSem
     volatile unsigned long totalSum_Named_Sem;   // test 4; protected by "total_sum_named_semaphore"
-    volatile std::atomic<unsigned int> numProcsInitialized;
-    volatile std::atomic<unsigned int> numErrors;
-    pthread_mutex_t count_mutex;                 // condition variable mutex
-    pthread_cond_t all_processes_created;        // condition variable.
-    sem_t unNamedSem;                            // unnamed Semaphore
+    volatile std::atomic<unsigned int> numProcsInitialized; // number of processes that finished init phase.
+    NUMERROR_TYPE numErrors;                          // general error counter for this application.
+    sem_t unNamedSem;                                   // unnamed Semaphore
     struct testInstance test[NUM_TESTS];         //
 };
 
@@ -93,8 +104,7 @@ static int doChildActions( unsigned int i );
 static int openShm( bool create );
 static bool checkShm( region* const rptr );
 static region* mapSharedMem( int fd );
-static void createProcesses( pid_t* pidTble );
-static void waitForAllProcessesToInit( region* const rptr );
+static void createProcesses( pid_t* pidTble, region* const rptr );
 static void waitForProcess( pid_t* pidTble );
 static void initSharedMem( region* const rptr );
 static void flushToDisk( region* const rptr );
@@ -103,13 +113,10 @@ static void printSharedMem( region* const rptr );
 static sem_t* initSemaphores( region* const rptr );
 static void closeSemaphores( region* const rptr, sem_t* namedSemPtr );
 static void signalIfTestsDone( region* const rptr, unsigned int i );
-static void signalStartTest( region* const rptr, unsigned int i );
+static void signalStartOfTestAndWaitTillDone( region* const rptr, unsigned int i );
 static void waitForStartTestSignal( region* const rptr, unsigned int i );
 static void waitForTestToFinishSignal( region* const rptr, timespec ts_start, unsigned int i );
 static void coordinateTests( region* const rptr );
-
-static void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr,
-                                int line );
 
 using namespace std;
 
@@ -126,7 +133,7 @@ void sharedMemory()
         initSharedMem( rptr );
         namedSemPtr = initSemaphores( rptr );
 
-        createProcesses( pidTble );
+        createProcesses( pidTble, rptr);
         coordinateTests( rptr );
         waitForProcess( pidTble );
 
@@ -140,7 +147,7 @@ void sharedMemory()
         // get rid of shared memory
         if( shm_unlink(MEMORY_NAME) )
         {
-            throwARunTimeError("shm_unlink()", true, nullptr, __LINE__ );
+            throwARunTimeError("shm_unlink()", true, nullptr, __LINE__);
         }
         if( sem_unlink(TOTAL_SUM_SEM ) )
         {
@@ -184,7 +191,7 @@ int openShm( bool create )
 
 int doChildActions( unsigned int procNum )
 {
-    //   T_START;
+    if( Debug ) T_START;
     try
     {
         // print out pid and i number
@@ -204,16 +211,17 @@ int doChildActions( unsigned int procNum )
         {
             throwARunTimeError( "sem_open()", true, nullptr, __LINE__ );
         }
-
-        waitForAllProcessesToInit( rptr );
+        rptr->numProcsInitialized++;
 
         // test 0
         unsigned int testId = 0;
         waitForStartTestSignal( rptr, testId );
-
-        stringstream ss;
-        ss << "running test[" << testId << "]=" << rptr->test[testId].name;
-        T_LOG( ss.str().c_str() );
+        if( Debug )
+        {
+            stringstream ss;
+            ss << "running test[" << testId << "]=" << rptr->test[testId].name;
+            T_LOG( ss.str().c_str() );
+        }
         for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
             rptr->sum[procNum]++;                 // safe, since process specific.
@@ -225,9 +233,13 @@ int doChildActions( unsigned int procNum )
         assert( testId <= NUM_TESTS );
         waitForStartTestSignal( rptr, testId );
 
-        ss.str("");
-        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
-        T_LOG( ss.str().c_str() );
+        if( Debug )
+        {
+            stringstream ss;
+            ss.str("");
+            ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+            T_LOG( ss.str().c_str() );
+        }
         for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
             rptr->totalSum++;                // not process/thread-safe..
@@ -238,9 +250,13 @@ int doChildActions( unsigned int procNum )
         testId++;
         assert( testId <= NUM_TESTS );
         waitForStartTestSignal( rptr, testId );
-        ss.str("");
-        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
-        T_LOG( ss.str().c_str() );
+        if( Debug )
+        {
+            stringstream ss;
+            ss.str("");
+            ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+            T_LOG( ss.str().c_str() );
+        }
         for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
             rptr->totalSumAtomic++;         //  safe since protected with std::atomic<>
@@ -251,9 +267,13 @@ int doChildActions( unsigned int procNum )
         testId++;
         assert( testId <= NUM_TESTS );
         waitForStartTestSignal( rptr, testId );
-        ss.str("");
-        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
-        T_LOG( ss.str().c_str() );
+        if( Debug )
+        {
+            stringstream ss;
+            ss.str("");
+            ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+            T_LOG( ss.str().c_str() );
+        }
         for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
             sem_wait( namedSemPtr );
@@ -266,9 +286,13 @@ int doChildActions( unsigned int procNum )
         testId++;
         assert( testId <= NUM_TESTS );
         waitForStartTestSignal( rptr, testId );
-        ss.str("");
-        ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
-        T_LOG( ss.str().c_str() );
+        if( Debug)
+        {
+            stringstream ss;
+            ss.str("");
+            ss << "running test[" << testId << "]=" << rptr->test[testId].name << "]";
+            T_LOG( ss.str().c_str() );
+        }
         for( unsigned int k = 0; k < ITERATIONS; k++ )
         {
             sem_wait( &(rptr->unNamedSem) );
@@ -276,11 +300,6 @@ int doChildActions( unsigned int procNum )
             sem_post( &(rptr->unNamedSem) );
         }
         signalIfTestsDone( rptr, testId );
-
-        if( Debug )
-        {
-            printSharedMem( rptr );
-        }
 
         closeSemaphores( nullptr, namedSemPtr );
 
@@ -290,7 +309,7 @@ int doChildActions( unsigned int procNum )
         T_LOG( e.what() );
         return (-1);
     }
-    //   T_END;
+    if( Debug ) T_END;
     return 0;  // success
 }
 
@@ -301,11 +320,10 @@ region* mapSharedMem( int fd )
     long pg_size = sysconf( _SC_PAGE_SIZE );
     assert( pg_size >= (long ) (sizeof(struct region)) ); // make sure a page is larger than what we need
 
-    rptr = (region*) (mmap( NULL, pg_size,
-    PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0 ));
+    rptr = (region*) (mmap( NULL, pg_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0 ));
     if( rptr == MAP_FAILED )
     {
-        throwARunTimeError( "mmap()", true, rptr, __LINE__ );
+        throwARunTimeError( "mmap()", true, &(rptr->numErrors), __LINE__ );
     }
 
     // mlock() does not work for memory mapped regions.  Works for the heap though.. Weird.
@@ -313,11 +331,11 @@ region* mapSharedMem( int fd )
     // lock into memory; disable paging...
     if( mlock( ptr, sizeof(struct region) ) )
     {
-        throwARunTimeError( "mlock()", true, rptr, __LINE__ );
+        throwARunTimeError( "mlock()", true, &(rptr->numErrors), __LINE__ );
     }
     if( munlock( ptr, sizeof(struct region) ) )
     {
-        throwARunTimeError( "mlock()", true, rptr, __LINE__ );
+        throwARunTimeError( "munlock()", true, &(rptr->numErrors), __LINE__ );
     }
     free( ptr );
 
@@ -326,8 +344,6 @@ region* mapSharedMem( int fd )
 
 void initSharedMem( region* const rptr )
 {
-    int ret = 0;
-
     for( unsigned int i = 0; i < NUM_TESTS; i++ )
     {
         rptr->test[i].numProcsFinishedTest = 0;
@@ -387,70 +403,7 @@ void initSharedMem( region* const rptr )
     rptr->numErrors = 0;
     rptr->numProcsInitialized = 0;
 
-    // Initialize mutex
-    pthread_mutexattr_t attr;
-    if( (ret = pthread_mutexattr_init( &attr )) )
-    {
-        throwARunTimeError( "pthread_mutexattr_init()", true, rptr, __LINE__ );
-    }
-
-    //  note: PTHREAD_PROCESS_SHARED not supported in Cygwin because of lack of
-    //  support in windows Pthreads-w32
-    if( (ret = pthread_mutexattr_setpshared( &attr, PTHREAD_PROCESS_SHARED )) )
-    {
-        if( ret == EINVAL )
-        {
-            string s = "pthread_mutexattr_setpshared(); ret=";
-            s.append( strerror( ret ) );
-            s.append( " ... continuing ..." );
-            T_LOG( s.c_str() );
-        } else
-        {
-            throwARunTimeError( "pthread_mutexattr_setpshared()", false, rptr, __LINE__ );
-        }
-    }
-    if( pthread_mutex_init( &rptr->count_mutex, &attr ) )
-    {
-        throwARunTimeError( "pthread_mutex_init()", true, rptr, __LINE__ );
-    }
-    if( pthread_mutexattr_destroy( &attr ) )
-    {
-        throwARunTimeError( "pthread_mutexattr_destroy()", true, rptr, __LINE__ );
-    }
-
-    // Initialize condition variable
-    pthread_condattr_t condAttr;
-    if( pthread_condattr_init( &condAttr ) )
-    {
-        throwARunTimeError( "pthread_condattr_init()", true, rptr, __LINE__ );
-    }
-    //  note: PTHREAD_PROCESS_SHARED not supported in Cygwin because of lack of
-    //  support in windows Pthreads-w32
-    if( (ret = pthread_condattr_setpshared( &condAttr, PTHREAD_PROCESS_SHARED )) )
-    {
-        if( ret == EINVAL )
-        {
-            string s = "pthread_condattr_setpshared(); ret=";
-            s.append( strerror( ret ) );
-            s.append( " ... continuing ..." );
-            T_LOG( s.c_str() );
-        } else
-        {
-            throwARunTimeError( "pthread_condattr_setpshared()", false, rptr, __LINE__ );
-        }
-    }
-    if( pthread_condattr_setclock( &condAttr, CLOCK_MONOTONIC ) )
-    {
-        throwARunTimeError( "pthread_condattr_setclock()", true, rptr, __LINE__ );
-    }
-    if( pthread_cond_init( &rptr->all_processes_created, &condAttr ) )
-    {
-        throwARunTimeError( "pthread_cond_init()", true, rptr, __LINE__ );
-    }
-    if( pthread_condattr_destroy( &condAttr ) )
-    {
-        throwARunTimeError( "pthread_condattr_destroy()", true, rptr, __LINE__ );
-    }
+    return;
 }
 
 sem_t* initSemaphores( region* const rptr )
@@ -497,39 +450,42 @@ void closeSemaphores( region* const rptr, sem_t* namedSemPtr )
 // processes call this to wait for the start of a new test
 void waitForStartTestSignal( region* const rptr, unsigned int i )
 {
-    T_START;
+    if( Debug ) T_START;
     if( sem_wait( &(rptr->test[i].startTest) ) )
     {
+        throwARunTimeError( "sem_wait()", true, &(rptr->numErrors), __LINE__);
         string s("sem_wait() on startTest failed; perror=");
         s.append( strerror(errno) );
         T_LOG( s.c_str() );
         throw( s.c_str() );
     }
-    T_END;
+    if( Debug ) T_END;
 }
 
 // processes call this when their test is done.
 void signalIfTestsDone( region* const rptr, unsigned int i )
 {
-    T_START;
+    if( Debug ) T_START;
     if( ++(rptr->test[i].numProcsFinishedTest) >= NUM_PROC )
     {
+        T_LOG("sem_post");
         // signal main thread that all children are done.
         if( sem_post( &(rptr->test[i].finishTest) ))
         {
+            throwARunTimeError( "sem_post()", true, &(rptr->numErrors), __LINE__);
             string s("sem_post() on finishTest failed; perror=");
             s.append( strerror(errno) );
             T_LOG( s.c_str() );
             throw( s.c_str() );
         }
     }
-    T_END;
+    if( Debug ) T_END;
 }
 
 // main thread calls this to wait for the finish of the test
 void waitForTestToFinishSignal( region* const rptr, timespec ts_start, unsigned int testId )
 {
-    T_START;
+    if( Debug ) T_START;
     int ret;
     if( (ret = sem_wait( &(rptr->test[testId].finishTest) )))
     {
@@ -538,21 +494,25 @@ void waitForTestToFinishSignal( region* const rptr, timespec ts_start, unsigned 
         T_LOG( s.c_str() );
         throw( s.c_str() );
     }
-    // do the accounting...
+    // do the accounting to figure out how long the test took.
     struct timespec ts_finish;
     clock_gettime( CLOCK_MONOTONIC, &ts_finish );
     uint64_t delta_us = (ts_finish.tv_sec - ts_start.tv_sec) * 1000000 + (ts_finish.tv_nsec - ts_start.tv_nsec) / 1000;
-    stringstream ss;
+
+    // record in shared memory
     rptr->test[testId].elapsedTime = delta_us*1000;
+
+    // log elapsed time
+    stringstream ss;
     ss << rptr->test[testId].name << ":elapsed time=" << ( delta_us*1000 ) << " ms";
     T_LOG( ss.str().c_str() );
-    T_END;
+    if( Debug ) T_END;
 }
 
 // main thread calls this to signal the start of a test.
-void signalStartTest( region* const rptr, unsigned int i )
+void signalStartOfTestAndWaitTillDone( region* const rptr, unsigned int i )
 {
-    T_START;
+    if( Debug ) T_START;
     struct timespec ts_start;
     clock_gettime( CLOCK_MONOTONIC, &ts_start );
 
@@ -568,19 +528,20 @@ void signalStartTest( region* const rptr, unsigned int i )
         }
     }
     waitForTestToFinishSignal( rptr, ts_start, i );
-    T_END;
+    if( Debug ) T_END;
 }
 
 void coordinateTests( region* const rptr )
 {
-    for( unsigned int testId; testId < NUM_TESTS; testId++ )
+    T_START;
+    for( unsigned int testId = 0; testId < NUM_TESTS; testId++ )
     {
-        sleep( 5 );
         stringstream ss;
         ss << "starting test[" << testId << "] = " << rptr->test[testId].name;
         T_LOG( ss.str().c_str() );
-        signalStartTest( rptr, testId );
+        signalStartOfTestAndWaitTillDone( rptr, testId );
     }
+    T_END;
 }
 
 // check totals; the only one we expect to match is totalSumAtomic.
@@ -628,17 +589,21 @@ bool checkShm( region* const rptr )
     return match;
 }
 
-void createProcesses( pid_t* pidTble )
+// called by main process to create all child threads.
+void createProcesses( pid_t* pidTble, region* const rptr )
 {
+    T_START;
     // create processes
     for( unsigned int procNum = 0; procNum < NUM_PROC; procNum++ )
     {
+
         pid_t pid = fork();
         if( pid == -1 )
         {
             throwARunTimeError( "fork()", false, nullptr, __LINE__ );
             assert( false );
-        } else if( pid == 0 )
+        }
+        else if( pid == 0 )
         {
             int ret = doChildActions( procNum );
             exit( ret );
@@ -648,10 +613,33 @@ void createProcesses( pid_t* pidTble )
             pidTble[procNum] = pid;
         }
     }
+
+    // sleep to give child processes time to initialize.
+    bool isInitComplete = false;
+    for( unsigned int i = 0; i < 10; i++)
+    {
+        if( rptr->numProcsInitialized >= NUM_PROC )
+        {
+            isInitComplete = true;
+            sleep(1);                // avoid race condition
+            T_LOG( "child processes initialization complete");
+            break;
+        }
+        sleep(1);
+    }
+    if( !isInitComplete)
+    {
+        throwARunTimeError( "createProcesses() timeout", false, nullptr, __LINE__ );
+        assert( isInitComplete );
+    }
+
+    T_END;
 }
 
+// called by main thread to wait for child processes to exit
 void waitForProcess( pid_t* pidTble )
 {
+    T_START;
     // wait for processes
     for( unsigned int i = 0; i < NUM_PROC; i++ )
     {
@@ -663,78 +651,22 @@ void waitForProcess( pid_t* pidTble )
             assert( false );
         }
         assert( pid == pidTble[i] );
-        //     assert( result == 0 );
     }
-}
-
-void waitForAllProcessesToInit( region* const rptr )
-{
-    if( pthread_mutex_lock( &rptr->count_mutex ) )
-    {
-        throwARunTimeError( "pthread_mutex_lock()", false, rptr, __LINE__ );
-        rptr->numErrors++;
-    }
-
-    rptr->numProcsInitialized++;
-    if( Debug )
-    {
-        printSharedMem( rptr );
-    }
-
-    //  Wait until the last process  has started. Then release other processes.
-    if( rptr->numProcsInitialized >= NUM_PROC )
-    {
-        // release all waiting threads.
-        if( Debug ) T_LOG( "cond" );
-
-        if( pthread_cond_broadcast( &rptr->all_processes_created ) )
-        {
-            throwARunTimeError( "pthread_cond_broadcast()", true, rptr, __LINE__ );
-        }
-    } else
-    {
-        // wait till last thread is created.
-        if( Debug ) T_LOG( "wait" );
-
-        // settimeout 2seconds.
-        struct timespec ts;
-        clock_gettime( CLOCK_MONOTONIC, &ts );
-        ts.tv_sec += 2;
-        //       note: pthread_cond_timedwait() always times out since Windows does not support
-        //       PTHREAD_SHARED
-        int ret;
-        if( (ret = pthread_cond_timedwait( &rptr->all_processes_created, &rptr->count_mutex, &ts )) )
-        {
-            if( ret == ETIMEDOUT )
-            {
-                string s = "pthread_cond_timedwait(); ret=";
-                s.append( strerror( ret ) );
-                s.append( " ... continuing ..." );
-                T_LOG( s.c_str() );
-            } else
-            {
-                throwARunTimeError( "pthread_cond_timedwait()", true, rptr, __LINE__ );
-            }
-        }
-    }
-    if( pthread_mutex_unlock( &rptr->count_mutex ) )
-    {
-        throwARunTimeError( "pthread_mutex_unlock()", false, rptr, __LINE__ );
-    }
+    T_END;
 }
 
 void cleanupSharedMem( region** rptr )
 {
     if( *rptr )
     {
-        pthread_mutex_destroy( &((*rptr)->count_mutex) );
-        pthread_cond_destroy( &((*rptr)->all_processes_created) );
         if( munmap( *rptr, sizeof(struct region) ) )
         {
-            throwARunTimeError( "munmap()", false, *rptr, __LINE__ );
+
+            throwARunTimeError( "munmap()", false, &((*rptr)->numErrors), __LINE__ );
         }
     }
     *rptr = nullptr;
+    return;
 }
 
 void flushToDisk( region* const rptr )
@@ -742,7 +674,7 @@ void flushToDisk( region* const rptr )
     T_START;
     if( msync( rptr, sizeof(struct region), MS_SYNC ) )
     {
-        throwARunTimeError( "msync()", true, rptr, __LINE__ );
+        throwARunTimeError( "msync()", true, &(rptr->numErrors), __LINE__ );
     }
 
     T_END;
@@ -750,16 +682,16 @@ void flushToDisk( region* const rptr )
 
 void printSharedMem( region* const rptr )
 {
-
     //  set the sums for each test for uniform printing
+    rptr->test[0].sumResult = 0;
     for( unsigned int k = 0; k < NUM_PROC; k++ )
     {
         rptr->test[0].sumResult += rptr->sum[k];
     }
-    rptr->test[1].sumResult += rptr->totalSum;
-    rptr->test[2].sumResult += rptr->totalSumAtomic;
-    rptr->test[3].sumResult += rptr->totalSum_Named_Sem;
-    rptr->test[4].sumResult += rptr->totalSum_Unamed_Sem;
+    rptr->test[1].sumResult = rptr->totalSum;
+    rptr->test[2].sumResult = rptr->totalSumAtomic;
+    rptr->test[3].sumResult = rptr->totalSum_Named_Sem;
+    rptr->test[4].sumResult = rptr->totalSum_Unamed_Sem;
 
     // print
     stringstream ss;
@@ -767,34 +699,62 @@ void printSharedMem( region* const rptr )
     ss << " numProcsInitialized=" << rptr->numProcsInitialized << endl;
     for( unsigned int procId = 0; procId < NUM_PROC; procId++ )
     {
-        ss << " sum[" << procId << "]=" << rptr->sum[procId] << endl;
+        ss << " sum[" << procId << "]=" << rptr->sum[procId] << "\n";
     }
 
     uint64_t base = rptr->test[0].elapsedTime;
-    for( unsigned int testId = 0; testId < NUM_TESTS; testId++ )
+    if( base )  // skip if elapsed time was zero for some reason; the test did not run.
     {
-        ss << "test[=" << testId << "]= " << rptr->test[testId].name << endl;
-        ss << "test[=" << testId << "] Sum = " << rptr->test[testId].sumResult;
-        unsigned long ratio = rptr->test[testId].elapsedTime / base;
-        ss << "      elapsedTime = " << rptr->test[testId].elapsedTime << " ms ;" << " ratio = "
-                << ratio << endl;
-    }
+        for( unsigned int testId = 0; testId < NUM_TESTS; testId++ )
+        {
+            unsigned long ratio = rptr->test[testId].elapsedTime / base;
 
-    T_LOG( ss.str().c_str() );
-}
-
-void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr, int line )
-{
-    if( rptr ) rptr->numErrors++;
-    stringstream ss;
-    ss << "Line#=" << line << " " << functionName << " failed; perror=" << strerror( errno );
-    if( doThrow )
-    {
-        throw(std::runtime_error( ss.str().c_str() ));
+            ss << "test[=" << testId << "]= " << rptr->test[testId].name << "\n";
+            ss << "test[=" << testId << "] Sum = " << rptr->test[testId].sumResult;
+            ss << "      elapsedTime = " << rptr->test[testId].elapsedTime << " ms ;" << " ratio = "
+                    << ratio;
+        }
     } else
     {
-        ss << "..continuing..";
+        for( unsigned int testId = 0; testId < NUM_TESTS; testId++ )
+        {
+            ss << "test[=" << testId << "]= " << rptr->test[testId].name << "\n";
+            ss << "test[=" << testId << "] Sum = " << rptr->test[testId].sumResult;
+            ss << "      elapsedTime = " << 0 << " ms ;" << " ratio = " << 0;
+        }
+
     }
+
     T_LOG( ss.str().c_str() );
-    return;
 }
+
+/*
+ // error handler,
+ // functionName: function Name where error occurred.
+ // doThrow:  throw an exception
+ // region: shared memory region that accumulates error counts.
+ // line:   Function Line Number for tracing
+ // retVal: Some methods use errono, some methods have the error returned to them. If zero, then errno is used.
+ void throwARunTimeError( const char* functionName, bool doThrow, region* const rptr, int line, int retVal  )
+ {
+ if( rptr ) rptr->numErrors++;
+ stringstream ss;
+ if( retVal )
+ {
+ ss << "Line#=" << line << " " << functionName << " failed; retVal=" << strerror( retVal );
+ }
+ else
+ {
+ ss << "Line#=" << line << " " << functionName << " failed; perror=" << strerror( errno );
+ }
+ if( doThrow )
+ {
+ throw(std::runtime_error( ss.str().c_str() ));
+ } else
+ {
+ ss << "..continuing..";
+ }
+ T_LOG( ss.str().c_str() );
+ return;
+ }
+ */

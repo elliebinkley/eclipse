@@ -3,15 +3,23 @@
 // Author      : larry Burley
 // Version     :
 // Copyright   : Your copyright notice
-// Description : This program plays around with POSIX threads via calls to pthread_create();
+// Description : The static array myTestInfo gets statically initialized with NUM_THREADS TestInfo objects prior to main()
+//             : main() creates a bunch of threads. Each thread adds a random number to a global sum value and waits 5 seconds.
+//             : The updating and the waiting are mutex protected. Then the thread exists.
+//             : The main thread waits for each thread to complete, then when all have completed, prints out the global sum.
+//
+//             : Details:
+//             : This program plays around with POSIX threads via calls to pthread_create();
 //             : It uses mutext to protect a variable which is accessed by many threads to sum up a series of numbers.
 //             : See https://computing.llnl.gov/tutorials/pthreads
 //             : Note 1: Printing is done via std::stringstream so that the string is formatted completely, then
 //             : streamed to cout.  This prevents strings from being interspersed between threads by the
 //             : "<<" operator not guaranteeing that two strings appended by "<<" will not be interspersed
 //             : " with other strings from another thread.
+//             :
 //             : Note: In Cygwin, threads cannot be pinned to a core via the cpuset data structure passed to
 //             : the pthread_set_affinity call.
+//             :
 //             : See pthread_create(), pthread_join(), pthread_attr_init(),pthread_attr_destroy(),
 //             : pthread_self(), pthread_getspecific(), pthread_setspecific(),
 //             : pthread_exit(), pthread_key_create(), pthread_once_t(),
@@ -41,20 +49,11 @@
 
 using namespace std;
 
-static void*
-doSomething( void* param );
-
-static void
-printThreadAttributes( pthread_attr_t attr );
-
-static void
-threadInit( void );
-
-static void
-threadDestroy( void * );
-
-static void
-printSum( void );
+static void* doSomething( void* param );
+static void printThreadAttributes( pthread_attr_t attr );
+static void threadInit( void );
+static void threadDestroy( void * );
+static void printSum( void );
 
 // Thread tracking object
 static const unsigned int NUM_THREADS = 500;
@@ -89,22 +88,13 @@ static std::vector<pthread_key_t> *threadKeys = 0;
 
 static int randomSum = 0;                // sum of all pthread randomValues from TestInfo
 static pthread_mutex_t* randomSumMutex;  // mutex to protect randomSum
-static pthread_cond_t *cv;               // condition variable
 
-//static pthread_cond_t fakeCond   = PTHREAD_COND_INITIALIZER;
-//static pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
-
-// The static array myTestInfo gets statically initialized with 6 TestInfo objects prior to main()
-// main() creates a bunch of threads. Each thread adds a random number to a global sum value and waits 5 seconds.
-// The updating and the waiting are mutex protected. Then the thread exists.
-// The main thread waits for each thread to complete, then when all have completed, prints out the global sum.
-
-void posixThreadHandlingWithPosixMutex(void)
+void posixThreadHandlingWithPosixMutex( void )
 {
 
-   T_START
+    T_START;
 
-    int retVal = 0;
+    unsigned int retVal = 0;
     // print thread attributes
     pthread_attr_t attr;
     if( (retVal = pthread_attr_init( &attr )) != 0 )
@@ -176,17 +166,15 @@ void posixThreadHandlingWithPosixMutex(void)
 
     if( ( retVal = pthread_mutex_destroy(randomSumMutex)) != 0 )
     {
-       cout <<  "pthread_mutex_destroy() failed=" << retVal << endl;
+        cout << "pthread_mutex_destroy() failed=" << retVal << endl;
     }
     if( randomSumMutex ) delete randomSumMutex;
-    if( cv ) delete cv;
 
-    T_END
+    T_END;
     return;
 }
 
-static void*
-doSomething( void* data )
+static void* doSomething( void* data )
 {
     int retVal = 0;
     pthread_t id = ((TestInfo*) (data))->myThreadInfo;
@@ -254,13 +242,12 @@ doSomething( void* data )
 
         // print data
         /*
-        std::stringstream s5 = std::stringstream();
-        s5 << "\nadding randomValue=" << ((TestInfo*) (data))->randomValue << " to randomSum="
-                << randomSumOld << " to get new randomSum=" << randomSum;
-        std::cout << s5.str() << endl;
-        */
+         std::stringstream s5 = std::stringstream();
+         s5 << "\nadding randomValue=" << ((TestInfo*) (data))->randomValue << " to randomSum="
+         << randomSumOld << " to get new randomSum=" << randomSum;
+         std::cout << s5.str() << endl;
+         */
         //   sleep( 5 );
-
         // if fails, might be because the mutex is not locked by this thread...
         if( (retVal = pthread_mutex_unlock( randomSumMutex )) != 0 )
         {
@@ -268,46 +255,15 @@ doSomething( void* data )
             ss << "pthread_mutex_unlock() failed=" << retVal << endl;
             throw ss.str();
         }
-
-        /*
-         // wait for 3 seconds
-         struct timeval now;
-         gettimeofday(&now,NULL);
-
-         struct timespec to;
-         to.tv_sec = now.tv_sec + 5;
-         to.tv_nsec =  (now.tv_usec+1000UL*1000)*1000UL;
-
-
-         if ((retVal = pthread_cond_timedwait( &fakeCond, &fakeMutex, &to)) == ETIMEDOUT)
-         {
-         cout << "timed out" << endl;
-         }
-         else
-         {
-         cout << "retval="<< retVal << endl;
-         }
-
-         pthread_cond_t fakeCond = PTHREAD_COND_INITIALIZER;
-         pthread_mutex_t fakeMutex = PTHREAD_MUTEX_INITIALIZER;
-
-         //if ((retVal = pthread_cond_wait( &fakeCond, &fakeMutex)) == ETIMEDOUT)
-
-
-         pthread_mutex_lock(&fakeMutex);
-         retVal = pthread_cond_wait( &fakeCond, &fakeMutex);
-         cout << "retval="<< retVal << endl;
-         pthread_mutex_unlock(&fakeMutex);
-         */
     }
-    catch( std::exception &e)
+    catch( std::exception &e )
     {
         stringstream ss;
         ss << "caught exception =" << e.what();
-        T_LOG( ss.str());
+        T_LOG( ss.str() );
     }
-    T_END
-    pthread_exit( (void*) termStatus );
+    T_END;
+    pthread_exit ( (void*) termStatus );
     return ( NULL);
 }
 
@@ -392,7 +348,6 @@ static void threadInit( void )
         pthread_exit( NULL );
     }
 
-
     // Put this key in a vector of keys; note the vector will only have one element.
     threadKeys->push_back( threadKey_Destruct );
 
@@ -400,7 +355,8 @@ static void threadInit( void )
     // when this thread is terminated.
     std::stringstream temp;
     pthread_t mainThread = pthread_self();
-    temp << "thread=" << mainThread << ";threadkey=" << threadKey_Destruct  << " File="<< __FILE__ << endl;
+    temp << "thread=" << mainThread << ";threadkey=" << threadKey_Destruct << " File=" << __FILE__
+            << endl;
     if( (retVal = pthread_setspecific( threadKey_Destruct, new std::string( temp.str() ) )) != 0 )
     {
         cout << "thread_setspecific(threadKey_Destruct) failed:" << retVal << endl;
@@ -413,41 +369,40 @@ static void threadInit( void )
     // robust( with a default of PTHREAD_MUTEX_ROBUST)
 
     pthread_mutexattr_t mutex_attr;
-    if( (retVal = pthread_mutexattr_init(&mutex_attr)) != 0 )
+    if( (retVal = pthread_mutexattr_init( &mutex_attr )) != 0 )
     {
         cout << "pthread_mutexattr_init() failed:" << retVal << endl;
         pthread_exit( NULL );
     }
 
     // protect against deadlock with PTHREAD_MUTEX_ERRORCHECK
-    if( (retVal =  pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_ERRORCHECK)) != 0 )
+    if( (retVal = pthread_mutexattr_settype( &mutex_attr, PTHREAD_MUTEX_ERRORCHECK )) != 0 )
     {
-           cout << "pthread_mutexattr_init() failed:" << retVal << endl;
-           pthread_exit( NULL );
+        cout << "pthread_mutexattr_init() failed:" << retVal << endl;
+        pthread_exit( NULL );
     }
 
     // set ROBUST mutex
     /* Not in Cygwin...
-   if( (retVal =  pthread_mutexattr_setrobust(&mutex_attr, PTHREAD_MUTEX_ROBUST)) != 0 )
-   {
-          cout << "pthread_mutexattr_setrobust() failed:" << retVal << endl;
-          pthread_exit( NULL );
-   }
-   */
-
+     if( (retVal =  pthread_mutexattr_setrobust(&mutex_attr, PTHREAD_MUTEX_ROBUST)) != 0 )
+     {
+     cout << "pthread_mutexattr_setrobust() failed:" << retVal << endl;
+     pthread_exit( NULL );
+     }
+     */
 
     // set priority of thread holding the mutex
     /* Not in Cygwin...
-    int x = 0;
-    if( (retVal =  pthread_mutexattr_setprotocol(&mutex_attr, PTHREAD_PRIO_NONE)) != 0 )
-    {
-           cout << "pthread_mutexattr_getprotocol() failed:" << retVal << endl;
-           pthread_exit( NULL );
-    }
-    */
+     int x = 0;
+     if( (retVal =  pthread_mutexattr_setprotocol(&mutex_attr, PTHREAD_PRIO_NONE)) != 0 )
+     {
+     cout << "pthread_mutexattr_getprotocol() failed:" << retVal << endl;
+     pthread_exit( NULL );
+     }
+     */
 
     randomSumMutex = new pthread_mutex_t();
-    if( ( retVal = pthread_mutex_init( randomSumMutex, &mutex_attr )) != 0 )
+    if( (retVal = pthread_mutex_init( randomSumMutex, &mutex_attr )) != 0 )
     {
         cout << "pthread_mutex_init failed:" << retVal << endl;
         pthread_exit( NULL );
@@ -458,13 +413,6 @@ static void threadInit( void )
     {
         cout << "pthread_mutexattr_destroy() failed:" << retVal << endl;
         pthread_exit( NULL );
-    }
-
-    // create a thread condition and initialize it.
-    cv = new pthread_cond_t( PTHREAD_COND_INITIALIZER );
-    if( pthread_cond_init( cv, NULL ) != 0 )
-    {
-        cout << "pthread_cond_init() failed" << endl;
     }
 
     cout << "threadInit() done" << endl;
@@ -506,11 +454,7 @@ static void printSum()
     pthread_mutex_lock( randomSumMutex );
     const long int myRandomSum = randomSum;
     pthread_mutex_unlock( randomSumMutex );
-    assert(sum == myRandomSum );
+    assert( sum == myRandomSum );
     cout << "Success: sum=" << sum << " :randomSum=" << myRandomSum << endl;
 }
-
-
-
-
 
