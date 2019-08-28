@@ -4,7 +4,9 @@
  *  Created on: Nov 20, 2016
  *      Author: USER
  *      A little program that demonstrates implementing a doubly linked list by
- *      a custom template implementation.
+ *      a custom template implementationIt also shows a function template.
+ *      The elements to the list must inherit from the base class Printable.
+ *
  */
 
 #include "appUser.h"
@@ -86,9 +88,11 @@ void AppUser::useListTemplate()
 
       //  test function template Max()
       SSN tmp=Max(eric.getSSN(), giselle.getSSN());
-      tmp.print();
-
+      std::cout <<  tmp.getSSN()  << std::endl;
       std::cout << " TestId:8" << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      // This fails to compile ( as expected)  since list3 requires Persons to be added to it.
+      // list3->addTail(tmp);
 
       std::cout << "Finished" << std::endl;
    }

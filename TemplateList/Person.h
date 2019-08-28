@@ -22,7 +22,6 @@ public:
    SSN( const std::string ssn );
    SSN( int firstPart, int secondPart, int thirdPart );
    std::string getSSN() const;
-   void print() const;
    virtual ~SSN();
 
    friend bool operator==( const SSN& ssn1, const SSN& ssn2 );

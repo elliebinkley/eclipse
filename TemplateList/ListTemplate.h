@@ -36,7 +36,7 @@ template<class T> class SimpleList
 public:
    class Element
    {
-      friend class SimpleList;
+      friend class SimpleList;  // enables SimpleList to call private methods in Element
    public:
 
       inline T getData()

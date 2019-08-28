@@ -72,11 +72,6 @@ SSN::SSN( int firstPart, int secondPart, int thirdPart ) :
 {
 }
 
-void SSN::print() const
-{
-    std::cout << "SSN=" << getSSN()  << std::endl;
-}
-
 SSN::SSN( const std::string ssn ) :
         m_firstPart( 0 ), m_secondPart( 0 ), m_thirdPart( 0 )
 {

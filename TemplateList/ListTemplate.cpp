@@ -15,7 +15,10 @@ template<class T> SimpleList<T>::SimpleList() :
 
 template<class T> SimpleList<T>::SimpleList( const T& data )
 {
-   static_cast<Printable*>((T*)0);  // compile time check; ensure that T inherits from Printable
+   // compile time check; ensure that T inherits from Printable
+   // only nobjects of type Printable can go in the list.
+   static_cast<Printable*>((T*)0);
+
    m_head = new Element( data );
    m_tail = m_head;
 }
@@ -140,7 +143,7 @@ template<class T> void SimpleList<T>::print() const
 
 
 // need to add the line below to support SimpleList Template definitions in a .cpp instead of a .h file.
-// C++ 17 supports export of templates, which is another technique.
+// C++ 17 supports export of templates, which is another technique that could be used.
 template class SimpleList<Person>;
 
 // The line below fails ( as expected) during compile since SSN does not inherit from class Printable
