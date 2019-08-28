@@ -2,7 +2,7 @@
  * Person.h
  *
  *  Created on: Nov 17, 2016
- *      Author: USER
+ *      Author: L. Burley
  */
 
 #ifndef PERSON_H_
@@ -20,15 +20,11 @@ public:
     SSN( const std::string ssn );
     SSN( int firstPart, int secondPart, int thirdPart );
     ~SSN();
-    std::string
-    getSSN() const;
-    void
-    print();
+    std::string getSSN() const;
+    void print();
 
-    friend bool
-    operator==( const SSN& ssn1, const SSN& ssn2 );
-    friend bool
-    operator!=( const SSN& ssn1, const SSN& ssn2 );
+    friend bool operator==( const SSN& ssn1, const SSN& ssn2 );
+    friend bool operator!=( const SSN& ssn1, const SSN& ssn2 );
 private:
     SSN();
     int m_firstPart;
@@ -60,7 +56,7 @@ public:
     {
         return m_address;
     }
-    inline void setFirstName( std::string firstName )
+    inline void setFirstName( const std::string firstName )
     {
         m_firstName = firstName;
     }
@@ -72,15 +68,15 @@ public:
     {
         m_address = address;
     }
-    inline void setFirstName( const char* firstName )
+    inline void setFirstName( const char* const firstName )
     {
         m_firstName = firstName;
     }
-    inline void setLastName( const char* lastName )
+    inline void setLastName( const char* const lastName )
     {
         m_lastName = lastName;
     }
-    inline void setAddress( const char* address )
+    inline void setAddress( const char* const address )
     {
         m_address = address;
     }
@@ -89,17 +85,13 @@ public:
         return m_ssn;
     }
 
-    friend bool
-    operator==( const Person &p1, const Person &p2 );
-    friend bool
-    operator!=( const Person &c1, const Person &c2 );
-    void
-    print();
+    friend bool operator==( const Person &p1, const Person &p2 );
+    friend bool operator!=( const Person &c1, const Person &c2 );
+    void print();
 
 private:
     Person();
-    Person&
-    operator=( const Person &rhs );
+    Person& operator=( const Person &rhs );
     std::string m_firstName;
     std::string m_lastName;
     std::string m_address;
