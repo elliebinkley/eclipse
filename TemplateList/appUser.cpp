@@ -24,8 +24,6 @@ void AppUser::useListTemplate()
 {
    try
    {
-      int testNum=1;
-      std::cout << " TestId:" << testNum << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
       SimpleList<Person> *list = new SimpleList<Person>;
 
       Person* larry = new Person( "larry", "burley", "204 Sanford Ave baltimore MD",
@@ -38,31 +36,24 @@ void AppUser::useListTemplate()
       assert( list->addTail( *larry) == SUCCESS );
       assert( list->addHead( *cathy ) == SUCCESS );
       assert( list->addTail( *james ) == SUCCESS );
-      printList( *list );
       list->print();
+      std::cout << " TestId:1 " << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
-      testNum++;
-      std::cout << " TestId:" << testNum << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
       assert( list->remove( *larry ) == SUCCESS );
-      printList( *list );
-
-      testNum++;
-      std::cout << " TestId:" << testNum << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+      list->print();
+      std::cout << " TestId:2" << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       assert( list->remove( *cathy ) == SUCCESS );
-      printList( *list );
+      list->print();
       assert( list->remove( *james ) == SUCCESS );
-      printList( *list );
-
-      std::cout << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+      list->print();
+      std::cout << " TestId:3" << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       delete larry;
       delete cathy;
       delete james;
-      std::cout << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
       delete list;
-
-      std::cout << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+      std::cout << " TestId:4" << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       SimpleList<Person> list1;
 
@@ -73,14 +64,14 @@ void AppUser::useListTemplate()
       assert( list1.addHead( jim ) == SUCCESS );
       assert( list1.addTail( giselle ) == SUCCESS );
       assert( list1.addTail( eric ) == SUCCESS );
-      printList( list1 );
+      list1.print();
 
       std::cout << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
       assert( list1.remove( jim ) == SUCCESS ) ;
       assert( list1.remove( giselle ) == SUCCESS) ;
-      printList( list1 );
+      list1.print();
       assert ( list1.remove( eric ) == SUCCESS );
-      printList( list1 );
+      list1.print();
       std::cout << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       SimpleList<Person> *list3 = new SimpleList<Person>;
@@ -89,10 +80,11 @@ void AppUser::useListTemplate()
       assert( list3->find( jim ) == SUCCESS );
       assert( list3->remove( jim ) == SUCCESS );
       assert( list3->find( jim ) == NOTFOUND );
-
       assert( list3->addTail( giselle ) == SUCCESS);
       assert( list3->addTail( eric ) == SUCCESS );
-      printList( *list3 );
+      list3->print();
+      std::cout << " TestId:5" << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
       std::cout << "Finished" << std::endl;
    }
    catch( const std::exception& e )
@@ -101,16 +93,4 @@ void AppUser::useListTemplate()
    }
 }
 
-void AppUser::printList( SimpleList<Person>& list )
-{
-   SimpleList<Person>::Element* e = list.getHead();
-   cout << "Printing list" << endl;
-
-   while( e )
-   {
-      Person p = e->getData();
-      p.print();
-      e = list.getNext( e );
-   }
-}
 

@@ -23,6 +23,13 @@ inline T const& Max( T const& a, T const& b )
    return a < b ? b : a;
 }
 
+class Printable
+{
+   public:
+      virtual void print() const = 0;
+      virtual void print(std::ostream& s) const = 0;
+};
+
 // implements a doubly linked list template class.
 template<class T> class SimpleList
 {
@@ -65,7 +72,7 @@ public:
       }
       inline void print() const
       {
-             std::cout << "name:" << this << std::endl;
+             m_data.print();
       }
 
       T m_data;
