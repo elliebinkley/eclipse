@@ -50,6 +50,12 @@ void Person::print()
             << m_address << endl;
 }
 
+void Person::print(std::ostream& s)
+{
+   s << "name:" << m_firstName << " " << m_lastName << " ssn:" << m_ssn.getSSN() << " address:"
+         << m_address << endl;
+}
+
 bool operator==( const Person& p1, const Person& p2 )
 {
     return (p1.m_firstName == p2.m_firstName && p1.m_lastName == p2.m_lastName

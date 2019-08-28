@@ -9,6 +9,7 @@
 #define PERSON_H_
 
 #include <string>
+#include <ostream>
 
 using namespace std;
 
@@ -22,6 +23,7 @@ public:
     ~SSN();
     std::string getSSN() const;
     void print();
+
 
     friend bool operator==( const SSN& ssn1, const SSN& ssn2 );
     friend bool operator!=( const SSN& ssn1, const SSN& ssn2 );
@@ -88,6 +90,7 @@ public:
     friend bool operator==( const Person &p1, const Person &p2 );
     friend bool operator!=( const Person &c1, const Person &c2 );
     void print();
+    void print(std::ostream& s);
 
 private:
     Person();
