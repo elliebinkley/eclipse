@@ -1,9 +1,0 @@
-Title: TemplateList 
-
-Description: TemplateList is a project to simply demonstrate a homegrown template.
-
-1. Implement a linked list using templates.
-2. compile at command line using make clean; make
-3. Constructed with eclipse. 
-4. main() is inside ListUser.cpp
-5. 
