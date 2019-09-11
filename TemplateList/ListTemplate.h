@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <string>
+#include <stdio.h>
 
 #define SUCCESS 0
 #define DUPLICATE 1
@@ -25,16 +26,26 @@ inline T const& Max( T const& a, T const& b )
 
 class Printable
 {
-   public:
-      virtual void print() const = 0;
-      virtual void print(std::ostream& s) const = 0;
+public:
+   virtual void print() const = 0;
+   virtual void print( std::ostream& s ) const = 0;
+   inline virtual ~Printable()
+   {
+   }
+   ;
 };
 
 // implements a doubly linked list template class.
+// Todo:1. write an iterator.
+//      2. Add max units on creation and malloc the memory
+//      3. Make multithreaded
+//      4. Make expandable beyond max units.
+//      5. Test with C++  unit test.
 template<class T> class SimpleList
 {
 public:
-   class Element
+   // Element is an inner class with outer class as a friend.
+   class Element : public Printable
    {
       friend class SimpleList;  // enables SimpleList to call private methods in Element
    public:
@@ -42,6 +53,18 @@ public:
       inline T getData()
       {
          return m_data;
+      }
+      virtual ~Element()
+      {
+      }
+
+      inline void print() const
+      {
+         m_data.print();
+      }
+      inline void print( std::ostream& s ) const
+      {
+         m_data.print( s );
       }
 
    private:
@@ -54,6 +77,7 @@ public:
       {
       }
       Element();
+
       inline Element* getNext()
       {
          return m_next;
@@ -69,10 +93,6 @@ public:
       inline void setPrevious( Element* previous )
       {
          m_previous = previous;
-      }
-      inline void print() const
-      {
-             m_data.print();
       }
 
       T m_data;
@@ -110,6 +130,5 @@ private:
    Element* m_head;
    Element* m_tail;
 };
-
 
 #endif

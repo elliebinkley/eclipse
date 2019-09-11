@@ -11,12 +11,15 @@
 template<class T> SimpleList<T>::SimpleList() :
       m_head( NULL ), m_tail( NULL )
 {
+   // compile time check; ensure that T inherits from Printable
+   // only objects of type Printable can go in the list.
+   static_cast<Printable*>((T*)0);
 }
 
 template<class T> SimpleList<T>::SimpleList( const T& data )
 {
    // compile time check; ensure that T inherits from Printable
-   // only nobjects of type Printable can go in the list.
+   // only objects of type Printable can go in the list.
    static_cast<Printable*>((T*)0);
 
    m_head = new Element( data );
