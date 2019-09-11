@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <string>
+#include <stdio.h>
 
 #define SUCCESS 0
 #define DUPLICATE 1
@@ -23,18 +24,47 @@ inline T const& Max( T const& a, T const& b )
    return a < b ? b : a;
 }
 
+class Printable
+{
+public:
+   virtual void print() const = 0;
+   virtual void print( std::ostream& s ) const = 0;
+   inline virtual ~Printable()
+   {
+   }
+   ;
+};
+
 // implements a doubly linked list template class.
+// Todo:1. write an iterator.
+//      2. Add max units on creation and malloc the memory
+//      3. Make multithreaded
+//      4. Make expandable beyond max units.
+//      5. Test with C++  unit test.
 template<class T> class SimpleList
 {
 public:
-   class Element
+   // Element is an inner class with outer class as a friend.
+   class Element : public Printable
    {
-      friend class SimpleList;
+      friend class SimpleList;  // enables SimpleList to call private methods in Element
    public:
 
       inline T getData()
       {
          return m_data;
+      }
+      virtual ~Element()
+      {
+      }
+
+      inline void print() const
+      {
+         m_data.print();
+      }
+      inline void print( std::ostream& s ) const
+      {
+         m_data.print( s );
       }
 
    private:
@@ -47,6 +77,7 @@ public:
       {
       }
       Element();
+
       inline Element* getNext()
       {
          return m_next;
@@ -63,6 +94,7 @@ public:
       {
          m_previous = previous;
       }
+
       T m_data;
       Element* m_next;
       Element* m_previous;
@@ -75,6 +107,7 @@ public:
    int addHead( const T& element );
    int remove( const T& element );
    int find( const T& element ) const;
+   void print() const;
 
    inline Element* getHead()
    {
@@ -97,105 +130,5 @@ private:
    Element* m_head;
    Element* m_tail;
 };
-
-template<class T> SimpleList<T>::SimpleList() :
-      m_head( NULL ), m_tail( NULL )
-{
-}
-
-template<class T> SimpleList<T>::SimpleList( const T& data )
-{
-   m_head = new Element( data );
-   m_tail = m_head;
-}
-
-template<class T> SimpleList<T>::~SimpleList()
-{
-   while( m_head )
-   {
-      remove( m_head->getData() );
-   }
-}
-
-// add to the tail of list if data is not already on the list
-// if already there return 1;
-template<class T> int SimpleList<T>::addTail( const T& data )
-{
-   Element* elementPtr = m_head;
-   while( elementPtr )
-   {
-      T nodeData = elementPtr->getData();
-      if( nodeData == data )
-      {
-         return 1; // duplicate
-      }
-      elementPtr = elementPtr->getNext();
-   }
-   // no dups
-   Element* newNode = new Element( data );
-   if( !m_head ) m_head = newNode;
-   if( m_tail ) m_tail->setNext( newNode );
-   newNode->setPrevious( m_tail );
-   m_tail = newNode;
-   return 0;
-}
-// add to the tail of list if data is not already on the list
-// if already there return 1;
-template<class T> int SimpleList<T>::addHead( const T& data )
-{
-   Element* elementPtr = m_head;
-   while( elementPtr )
-   {
-      T nodeData = elementPtr->getData();
-      if( nodeData == data )
-      {
-         return 1; // duplicate
-      }
-      elementPtr = elementPtr->getNext();
-   }
-   // no dups
-   Element* newNode = new Element( data );
-   if( !m_tail ) m_tail = (newNode);
-   if( m_head ) m_head->setPrevious( newNode );
-   newNode->setNext( m_head );
-   m_head = newNode;
-   return SUCCESS;
-}
-
-// removes element in the list with matching data
-template<class T> int SimpleList<T>::remove( const T& data )
-{
-   Element* elementPtr = m_head;
-   while( elementPtr )
-   {
-      T nodeData = elementPtr->getData();
-      if( nodeData == data )
-      {
-         Element* nextElement = elementPtr->getNext();
-         Element* previousElement = elementPtr->getPrevious();
-         if( previousElement ) previousElement->setNext( nextElement );
-         if( nextElement ) nextElement->setPrevious( previousElement );
-         delete elementPtr;
-         return SUCCESS;
-      }
-      elementPtr = elementPtr->getNext();
-   }
-   return NOTFOUND;
-}
-
-template<class T> int SimpleList<T>::find( const T& data ) const
-{
-   Element* elementPtr = m_head;
-   while( elementPtr )
-   {
-      T nodeData = (*elementPtr)->getData();
-      if( nodeData == data )
-      {
-         return SUCCESS;
-      }
-      elementPtr = elementPtr->getNext();
-   }
-   return NOTFOUND;
-}
 
 #endif

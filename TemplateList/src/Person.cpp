@@ -44,13 +44,13 @@ Person::~Person()
 {
 }
 
-void Person::print()
+void Person::print() const
 {
     cout << "name:" << m_firstName << " " << m_lastName << " ssn:" << m_ssn.getSSN() << " address:"
             << m_address << endl;
 }
 
-void Person::print(std::ostream& s)
+void Person::print(std::ostream& s) const
 {
    s << "name:" << m_firstName << " " << m_lastName << " ssn:" << m_ssn.getSSN() << " address:"
          << m_address << endl;
@@ -76,21 +76,37 @@ SSN::SSN( const std::string ssn ) :
         m_firstPart( 0 ), m_secondPart( 0 ), m_thirdPart( 0 )
 {
     int length = ssn.length();
-    if( length != SSN_LENGTH ) return;
+    if( length != SSN_LENGTH )
+    {
+       cout << " vvvv invalid SSN" << ssn <<  " string length:" << length <<  endl;
+       return;
+    }
 
-    const char* firstString = ssn.c_str();
+    const char* tmp = ssn.c_str();
     bool isValid = true;
 
-    for( int i = 0; i < length; i++, firstString++ )
+    for( int i = 0; i < length; i++, tmp++ )
     {
-        const char c = firstString[i];
+        const char c = *tmp;
         if( ! isdigit( c ) ) isValid = false;
     }
-    if( ! isValid ) return;
+    if( ! isValid )
+    {
+       std::cout << "invalid SSN string contents not all digits:" << ssn<< std::endl;
+       return;
+    }
 
-    m_firstPart = atoi( ssn.substr( 0, 2 ).c_str() );
-    m_secondPart = atoi( ssn.substr( 3, 4 ).c_str() );
-    m_thirdPart = atoi( ssn.substr( 5, 8 ).c_str() );
+    m_firstPart  = atoi( ssn.substr( 0, 3 ).c_str() );
+    m_secondPart = atoi( ssn.substr( 3, 2 ).c_str() );
+    m_thirdPart  = atoi( ssn.substr( 5, 8 ).c_str() );
+}
+
+bool operator<( const SSN& ssn1, const SSN& ssn2 )
+{
+    if ( ssn1.m_firstPart < ssn2.m_firstPart) return true;
+    if ( ssn1.m_secondPart < ssn2.m_secondPart) return true;
+    if ( ssn1.m_thirdPart < ssn2.m_thirdPart) return true;
+    return false;
 }
 
 SSN::~SSN()

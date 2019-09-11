@@ -18,7 +18,9 @@ using namespace std;
 int main( void )
 {
     cout << "starting main File=" << __FILE__ << "  line=" << __LINE__ << endl;
+
+    // run a test class that tests the linked list.
     AppUser appUser;
-    appUser.useListTemplate();
+    appUser.testListTemplateOfPersons();
 }
 

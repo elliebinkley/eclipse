@@ -4,7 +4,9 @@
  *  Created on: Nov 20, 2016
  *      Author: USER
  *      A little program that demonstrates implementing a doubly linked list by
- *      a custom template implementation.
+ *      a custom template implementationIt also shows a function template.
+ *      The elements to the list must inherit from the base class Printable.
+ *
  */
 
 #include "appUser.h"
@@ -13,82 +15,107 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <cassert>
 
 #include "ListTemplate.h"
 #include "Person.h"
 
 using namespace std;
 
-void AppUser::useListTemplate()
+void AppUser::testListTemplateOfPersons()
 {
    try
    {
-
+      int id = 1;
       SimpleList<Person> *list = new SimpleList<Person>;
 
       Person* larry = new Person( "larry", "burley", "204 Sanford Ave baltimore MD",
             *(new SSN( "215768210" )) );
       Person* cathy = new Person( "cathy", "burley", "4243 S Lincoln St, Denver CO ",
-            new SSN( 111, 222, 333 ) );
+            new SSN( 111, 22, 3333 ) );
       Person* james = new Person( "james", "burley", "1111 Sun Meadow St Hoghlands Ranch CO",
-            new SSN( "1234567878" ) );
+            new SSN( "123456789" ) );
 
-      list->addTail( *larry );
-      list->addHead( *cathy );
-      list->addTail( *james );
-      printList( *list );
-      list->remove( *larry );
-      printList( *list );
-      list->remove( *cathy );
-      printList( *list );
-      list->remove( *james );
-      printList( *list );
+      assert( list->addTail( *larry) == SUCCESS );
+      assert( list->addHead( *cathy ) == SUCCESS );
+      assert( list->addTail( *james ) == SUCCESS );
+      list->print();
+      std::cout << " TestId: " << id++ << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
-      std::cout << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+      assert( list->remove( *larry ) == SUCCESS );
+      list->print();
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      assert( list->remove( *cathy ) == SUCCESS );
+      list->print();
+      assert( list->remove( *james ) == SUCCESS );
+      list->print();
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       delete larry;
       delete cathy;
       delete james;
-
       delete list;
-
-      std::cout << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       SimpleList<Person> list1;
 
-      Person jim = Person( "jim", "west", "111 Main st wild west USA", *(new SSN( "2223334444" )) );
-      Person giselle = Person( "giselle", "bunchen", "new england", new SSN( 123, 245, 7890 ) );
-      Person eric = Person( "eric", "balwin", "1234 SNL drive", new SSN( "10987654321" ) );
-      std::cout << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
-      list1.addHead( jim );
-      list1.addTail( giselle );
-      list1.addTail( eric );
-      std::cout << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
-      printList( list1 );
-      list1.remove( jim );
-      list1.remove( giselle );
-      printList( list1 );
-      list1.remove( eric );
-      printList( list1 );
-      std::cout << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+      Person jim = Person( "jim", "west", "111 Main st wild west USA", *(new SSN( "222335444" )) );
+      Person giselle = Person( "giselle", "bunchen", "new england", new SSN( 123, 24, 7890 ) );
+      Person eric = Person( "eric", "baldwin", "1234 SNL drive", new SSN( "109768210" ) );
+      assert( list1.addHead( jim ) == SUCCESS );
+      assert( list1.addTail( giselle ) == SUCCESS );
+      assert( list1.addTail( eric ) == SUCCESS );
+      list1.print();
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      SimpleList<Person>::Element* e = list1.getHead();
+      while( e )
+      {
+         e->print();
+         e = list1.getNext( e );
+      }
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      e = list1.getTail();
+      while( e )
+      {
+         e->print();
+         e = list1.getPrevious( e );
+      }
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      assert( list1.remove( jim ) == SUCCESS );
+      assert( list1.remove( giselle ) == SUCCESS);
+      list1.print();
+      assert( list1.remove( eric ) == SUCCESS );
+      list1.print();
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      SimpleList<Person> *list3 = new SimpleList<Person>;
+      assert( list3->addHead( jim ) == SUCCESS );
+      assert( list3->addHead( jim ) == DUPLICATE );
+      assert( list3->find( jim ) == SUCCESS );
+      assert( list3->remove( jim ) == SUCCESS );
+      assert( list3->find( jim ) == NOTFOUND );
+      assert( list3->addTail( giselle ) == SUCCESS );
+      assert( list3->addTail( eric ) == SUCCESS );
+      list3->print();
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      //  test function template Max()
+      SSN tmp = Max( eric.getSSN(), giselle.getSSN() );
+      std::cout << tmp.getSSN() << std::endl;
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      // This fails to compile ( as expected)  since list3 requires Persons to be added to it.
+      // list3->addTail(tmp);
+
       std::cout << "Finished" << std::endl;
    }
    catch( const std::exception& e )
    {
       cout << e.what() << endl;
-   }
-}
-
-void AppUser::printList( SimpleList<Person>& list )
-{
-   SimpleList<Person>::Element* e = list.getHead();
-   cout << "Printing list" << endl;
-
-   while( e )
-   {
-      Person p = e->getData();
-      p.print();
-      e = list.getNext( e );
    }
 }
 
