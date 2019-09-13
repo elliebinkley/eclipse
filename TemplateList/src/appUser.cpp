@@ -11,12 +11,8 @@
 
 #include "appUser.h"
 
-#include <exception>
-#include <iostream>
-#include <vector>
-#include <array>
 #include <cassert>
-
+#include <list>
 #include "ListTemplate.h"
 #include "Person.h"
 
@@ -27,7 +23,9 @@ void AppUser::testListTemplateOfPersons()
    try
    {
       int id = 1;
+cout << "a0" << endl;
       SimpleList<Person> *list = new SimpleList<Person>;
+      list->print();
 
       Person* larry = new Person( "larry", "burley", "204 Sanford Ave baltimore MD",
             *(new SSN( "215768210" )) );
@@ -35,10 +33,15 @@ void AppUser::testListTemplateOfPersons()
             new SSN( 111, 22, 3333 ) );
       Person* james = new Person( "james", "burley", "1111 Sun Meadow St Hoghlands Ranch CO",
             new SSN( "123456789" ) );
-
+      cout << "a1" << endl;
       assert( list->addTail( *larry) == SUCCESS );
+      cout << "a2" << endl;
+      list->print();
+      cout << "a3" << endl;
       assert( list->addHead( *cathy ) == SUCCESS );
+      cout << "a4" << endl;
       assert( list->addTail( *james ) == SUCCESS );
+      cout << "a5" << endl;
       list->print();
       std::cout << " TestId: " << id++ << "File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
@@ -59,11 +62,13 @@ void AppUser::testListTemplateOfPersons()
       std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
 
       SimpleList<Person> list1;
-
+      std::cout << "pre pre jim" <<std::endl;
       Person jim = Person( "jim", "west", "111 Main st wild west USA", *(new SSN( "222335444" )) );
       Person giselle = Person( "giselle", "bunchen", "new england", new SSN( 123, 24, 7890 ) );
       Person eric = Person( "eric", "baldwin", "1234 SNL drive", new SSN( "109768210" ) );
+      cout << "pre jim" << endl;
       assert( list1.addHead( jim ) == SUCCESS );
+      cout << "aaaa jim" << endl;
       assert( list1.addTail( giselle ) == SUCCESS );
       assert( list1.addTail( eric ) == SUCCESS );
       list1.print();
@@ -111,7 +116,53 @@ void AppUser::testListTemplateOfPersons()
       // This fails to compile ( as expected)  since list3 requires Persons to be added to it.
       // list3->addTail(tmp);
 
-      std::cout << "Finished" << std::endl;
+      std::cout << "Finished testListTemplateOfPersons()" << std::endl;
+   }
+   catch( const std::exception& e )
+   {
+      cout << e.what() << endl;
+   }
+}
+
+void AppUser::testSTL_ListOfPersons()
+{
+   try
+   {
+      int id=1;
+
+      list<Person> *list_1 = new list<Person>;
+
+      Person jim = Person( "jim", "west", "111 Main st wild west USA", *(new SSN( "222335444" )) );
+      Person giselle = Person( "giselle", "bunchen", "new england", new SSN( 123, 24, 7890 ) );
+      Person eric = Person( "eric", "baldwin", "1234 SNL drive", new SSN( "109768210" ) );
+
+      list_1->push_back( jim );
+      list_1->push_back( giselle );
+      list_1->push_back( eric );
+
+      list<Person>::iterator listIterator_1;
+      for( listIterator_1 = list_1->begin(); listIterator_1 != list_1->end(); listIterator_1++ )
+      {
+         listIterator_1->print();
+      }
+      delete list_1;
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      Person myPeople[] = { Person( "jim", "west", "111 Main st wild west USA", *(new SSN( "222335444" )) ),
+                            Person( "giselle", "bunchen", "new england", new SSN( 123, 24, 7890 ) ),
+                            Person( "eric", "baldwin", "1234 SNL drive", new SSN( "109768210" ) ) };
+      list<Person> *list_2 = new std::list<Person>(  myPeople , myPeople + 3);
+
+      list_2->get_allocator().allocate(10);   // allocate 10 elements in memory.
+      list<Person>::iterator listIterator_2;
+      for( listIterator_2 = list_2->begin(); listIterator_2 != list_2->end(); listIterator_2++ )
+      {
+         listIterator_2->print();
+      }
+      delete list_2;
+      std::cout << " TestId:" << id++ << " File=" << __FILE__ << " line=" << __LINE__ << std::endl;
+
+      std::cout << "Finished testSTL_ListOfPersons()" << std::endl;
    }
    catch( const std::exception& e )
    {

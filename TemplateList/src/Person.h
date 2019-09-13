@@ -29,7 +29,7 @@ public:
    friend bool operator<( const SSN& ssn1, const SSN& ssn2 );
 
 private:
-   SSN();
+   SSN();  // make private; need to construct with values....
    int m_firstPart;
    int m_secondPart;
    int m_thirdPart;
@@ -45,6 +45,7 @@ public:
    Person( const char* firstname, const char* lastname, const char* address, const SSN* ssn );
    Person( const std::string* firstName, const std::string* lastName, const std::string* address,
            const SSN* ssn );
+
    virtual ~Person();
 
    inline std::string getFirstName() const
@@ -94,7 +95,7 @@ public:
    void print( std::ostream& s ) const;
 
 private:
-   Person();
+   Person();  // make private; can't construct without values...
    Person& operator=( const Person &rhs );
    std::string m_firstName;
    std::string m_lastName;

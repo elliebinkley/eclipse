@@ -36,7 +36,7 @@ Person::Person( const Person& person ) :
 }
 
 Person::Person() :
-        m_firstName( NULL ), m_lastName( NULL ), m_address( NULL ), m_ssn( 0, 0, 0 )
+        m_firstName( "" ), m_lastName( "" ), m_address( "" ), m_ssn( 0, 0, 0 )
 {
 }
 
@@ -69,6 +69,11 @@ bool operator!=( const Person& p1, const Person& p2 )
 
 SSN::SSN( int firstPart, int secondPart, int thirdPart ) :
         m_firstPart( firstPart ), m_secondPart( secondPart ), m_thirdPart( thirdPart )
+{
+}
+
+SSN::SSN() :
+        m_firstPart( 0 ), m_secondPart( 0 ), m_thirdPart( 0 )
 {
 }
 
