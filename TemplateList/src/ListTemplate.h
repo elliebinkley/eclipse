@@ -13,11 +13,6 @@
 #include <string>
 #include <stdio.h>
 
-#define SUCCESS 0
-#define DUPLICATE 1
-#define NOTFOUND 2
-#define NOMEMORY 3
-
 // returns greater of two values; uses a function template.
 template<typename T>
 inline T const& Max( T const& a, T const& b )
@@ -36,14 +31,24 @@ public:
 };
 
 // implements a doubly linked list template class.
-// Todo:1. write an iterator.
-//      2. Add max units on creation and malloc the memory
-//      3. Make multithreaded
-//      4. Make expandable beyond max units.
-//      5. Test with C++  unit test.
+//       1.  Instantiation allocates memory at startup for N units.
+//       2.  addTail(), addHead() return DUPLICATE if already there
+//       3.  addTail(), addHead() return NOMEMORY if allocation exceeded.
+//       4.  addTail(), addHead() make a deep copy of the data passed in.
+//       4.  find()    returns NOTFOUND if not found, else SUCCESS.
+//       5.  remove()  returns NOTFOUND if not found, else SUCCESS if removed.
+// Todo: 1. write an iterator.
+//       3. Make multithreaded, protect with mutex  and/or atomic.
+//       4. Make expandable beyond max units.
+//       5. Test with C++  unit test.
+//       6.
+//
+
 template<class T> class SimpleList
 {
 public:
+   enum ListAction { SUCCESS, DUPLICATE, NOTFOUND, NOMEMORY };
+
    // Element is an inner class with outer class as a friend.
    class Element : public Printable
    {
@@ -89,7 +94,7 @@ public:
       }
 
       Element();
-
+      // list traversal in private
       inline Element* getNext()
       {
          return m_next;
@@ -117,12 +122,14 @@ public:
    };
 
    SimpleList( size_t n = 20 );
-   SimpleList( const T& element, size_t n = 20 );
+   SimpleList( const T& data, size_t n = 20 );
    ~SimpleList();
-   int addTail( const T& element );
-   int addHead( const T& element );
-   int remove( const T& element );
-   int find( const T& element ) const;
+   int addTail( const T& data );
+   int addHead( const T& data );
+   int remove( const T& data );
+   int find( const T& data ) const;
+   Element* const findElement( const T& data ) const;
+
    void print() const;
 
    inline Element* const getHead()

@@ -187,6 +187,22 @@ template<class T> int SimpleList<T>::find( const T& data ) const
    return NOTFOUND;
 }
 
+template<class T> typename SimpleList<T>::Element* const SimpleList<T>::findElement( const T& data ) const
+{
+      Element* elementPtr = m_head;
+      while( elementPtr )
+      {
+         T nodeData = elementPtr->getData();
+         if( nodeData == data )
+         {
+           return elementPtr;
+          //  return 0;
+         }
+         elementPtr = elementPtr->getNext();
+      }
+      return NULL;
+}
+
 template<class T> void SimpleList<T>::addTailFree( Element* e )
 {
    e->setPrevious(m_tailFree);
