@@ -5,7 +5,7 @@
  *      Author: USER
  */
 
-#include "Person.h"
+#include "../inc/Person.hpp"
 
 #include <iostream>
 #include <string>
@@ -17,31 +17,43 @@ Person::Person( const std::string& firstName, const std::string& lastName,
                 const std::string& address, const SSN& ssn ) :
         m_firstName( firstName ), m_lastName( lastName ), m_address( address ), m_ssn( ssn )
 {
+	cout << "CTOR: ";
+	print();
 }
 
 Person::Person( const char* firstName, const char* lastName, const char* address, const SSN* ssn ) :
         m_firstName( firstName ), m_lastName( lastName ), m_address( address ), m_ssn( * ssn )
 {
+	cout << "CTOR: ";
+	print();
 }
 Person::Person( const std::string* firstName, const std::string* lastName,
                 const std::string* address, const SSN* ssn ) :
         m_firstName( * firstName ), m_lastName( * lastName ), m_address( * address ), m_ssn( * ssn )
 {
+	cout << "CTOR: ";
+	print();
 }
 
 Person::Person( const Person& person ) :
         m_firstName( person.m_firstName ), m_lastName( person.m_lastName ), m_address(
                 person.m_address ), m_ssn( person.m_ssn )
 {
+	cout << "Copy CTOR: ";
+	print();
 }
 
 Person::Person() :
         m_firstName( "" ), m_lastName( "" ), m_address( "" ), m_ssn( 0, 0, 0 )
 {
+	cout << "Default CTOR: ";
+	print();
 }
 
 Person::~Person()
 {
+	cout << "DTOR: ";
+	print();
 }
 
 void Person::print() const
@@ -83,7 +95,7 @@ SSN::SSN( const std::string ssn ) :
     int length = ssn.length();
     if( length != SSN_LENGTH )
     {
-       cout << " vvvv invalid SSN" << ssn <<  " string length:" << length <<  endl;
+       cout << "invalid SSN" << ssn <<  " string length:" << length <<  endl;
        return;
     }
 

@@ -5,16 +5,19 @@
  *      Author: L.Burley
  */
 
+#include "../inc/ListTemplate.hpp"
+
 #include <string.h>
 #include <cassert>
-#include "ListTemplate.h"
-#include "Person.h"
+
+#include "../inc/Person.hpp"
 
 using namespace std;
 
 
 template<class T> SimpleList<T>::SimpleList(size_t n) :
-      m_head( NULL ), m_tail( NULL ), m_headFree( NULL), m_tailFree( NULL )
+      m_head( NULL ), m_tail( NULL ), m_headFree( NULL), m_tailFree( NULL ),
+	  m_memory(0)
 {
    // compile time check; ensure that T inherits from Printable
    // as only objects of type Printable can go in the list.
@@ -24,7 +27,8 @@ template<class T> SimpleList<T>::SimpleList(size_t n) :
 }
 
 template<class T> SimpleList<T>::SimpleList( const T& data, size_t n ):
-        m_head( NULL ), m_tail( NULL ), m_headFree( NULL), m_tailFree( NULL )
+        m_head( NULL ), m_tail( NULL ), m_headFree( NULL), m_tailFree( NULL ),
+		m_memory(0)
 {
    // compile time check; ensure that T inherits from Printable
    // as only objects of type Printable can go in the list.
@@ -38,12 +42,12 @@ template<class T> void SimpleList<T>::initMem( size_t n )
 {
    if ( n==0 || n > 2000 ) n=20;
    size_t sz = n * sizeof(Element);
-   void* mem= malloc( sz );
-   assert( mem );
-   memset(  mem, 0, sz );
+   m_memory = malloc( sz );
+   assert( m_memory );
+   memset(  m_memory, 0, sz );
 
    // Add blocks to the free list
-   Element *e = (Element*) mem;
+   Element *e = (Element*) m_memory;
    m_headFree = 0;
    m_tailFree = 0;
    for( unsigned int i=0; i<n; i++ )
@@ -60,16 +64,16 @@ template<class T> void SimpleList<T>::initMem( size_t n )
 template<class T> SimpleList<T>::~SimpleList()
 {
    cout << "dtor SimpleList" << endl;
-   // don't assume elements are contiguous;
-   // destroy each element one by one.
+   // Run destructor on each one but don't free memory.
    while( m_head )
    {
       Element* e=m_head;
       m_head=e->getNext();
       if( m_head ) m_head->setPrevious(NULL);
       if( m_tail == e) m_tail=NULL;
-      delete e;
+      e->~Element() ;   // destruct but not free.
    }
+   free (m_memory);
 }
 
 // add to the tail of list if data is not already on the list
@@ -162,6 +166,8 @@ template<class T> int SimpleList<T>::remove( const T& data )
             m_tail=previousElement;
          }
          this->addTailFree(e);
+
+         e->~Element(); // run DTOR on element but do not free memory
 
          // clear old data ...
          memset ( &e->m_data, 0, sizeof(T) );

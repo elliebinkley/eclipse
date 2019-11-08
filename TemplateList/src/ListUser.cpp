@@ -8,7 +8,7 @@
  *      Also shows use of <list> STL
  */
 
-#include "AppUser.h"
+#include "../inc/AppUser.hpp"
 
 using namespace std;
 
