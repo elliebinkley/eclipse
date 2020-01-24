@@ -34,8 +34,7 @@ void
 MyLogger::log(const char *file, const char* function, int line, const std::string& str)
 {
    std::stringstream ss = std::stringstream();
-   ss << boost::chrono::time_fmt(boost::chrono::timezone::local,"%H:%M:%S")
-      << boost::chrono::system_clock::now() << " : "
+   ss << boost::chrono::system_clock::now() << " : "
 	  << "  thread id:" << boost::this_thread::get_id()
 	  << "       File:" << file
       << "   Function:" << function
@@ -51,8 +50,7 @@ MyLogger::logStart(const char *file, const char* function, int line )
 {
 
    std::stringstream ss = std::stringstream();
-   ss << boost::chrono::time_fmt(boost::chrono::timezone::local,"%H:%M:%S")
-      << boost::chrono::system_clock::now() << " : "
+   ss << boost::chrono::system_clock::now() << " : "
       << "  thread id:" << boost::this_thread::get_id()
       << " Start File:" << file
 	  << "   Function:" << function
@@ -68,8 +66,7 @@ MyLogger::logEnd(const char *file, const char* function, int line )
 
 
    std::stringstream ss = std::stringstream();
-   ss << boost::chrono::time_fmt(boost::chrono::timezone::local, "%H:%M:%S")
-	  << boost::chrono::system_clock::now() << " : "
+   ss << boost::chrono::system_clock::now() << " : "
       << "  thread id:" << boost::this_thread::get_id()
 	  << "   End File:" << file
       << "   Function:" << function

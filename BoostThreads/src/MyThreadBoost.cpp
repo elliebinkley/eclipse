@@ -34,98 +34,96 @@ MyThreadBoost::MyThreadBoost( const std::string& description ) : m_description(d
 }
 
 // callable operator
-void
-MyThreadBoost::operator()()
+void MyThreadBoost::operator()()
 {
-    T_START;
-    stringstream s1;
-    s1 << " thread id:" << m_thread->get_id();
-    m_description.append(s1.str());
-   	try
-   	{
-   	  for( int i = 0; i < 3; i++ )
-   	  {
-   		  T_START;
-   		  // get the mutex
-   		  MyThreadBoost::m_mtx.lock();
-   		  stringstream ss;
-   		  ss << m_description << " :sleeping for " << m_numSeconds << " for " << i << "th time with the mutex ";
-   		  std::string s = ss.str();
- 		  T_LOG( s);
+  T_START;
+  stringstream s1;
+  s1 << " thread id:" << m_thread->get_id();
+  m_description.append(s1.str());
+  try
+  {
+      for( int i = 0; i < 3; i++ )
+	{
+	  T_START;
+	  // get the mutex
+	  MyThreadBoost::m_mtx.lock();
+	  stringstream ss;
+	  ss << m_description << " :sleeping for " << m_numSeconds << " for " << i << "th time with the mutex ";
+	  std::string s = ss.str();
+	  T_LOG( s);
 
-   		  boost::this_thread::sleep_for( boost::chrono::seconds( m_numSeconds ) );
-   		  // unlock mutex;
-   		  MyThreadBoost::m_mtx.unlock();
-   		  T_END;
-   	  }
-   	}
-   	catch (boost::thread_interrupted&)
-   	{
-   		 T_START;
-   		 MyThreadBoost::m_mtx.unlock();
-   		 cout << "thread id=" << boost::this_thread::get_id() << " interrupted" << endl;
-   		 T_END;
-   	}
-    T_END;
+	  boost::this_thread::sleep_for( boost::chrono::seconds( m_numSeconds ) );
+	  // unlock mutex;
+	  MyThreadBoost::m_mtx.unlock();
+	  T_END;
+	}
+  }
+  catch (boost::thread_interrupted&)
+  {
+      T_START;
+      MyThreadBoost::m_mtx.unlock();
+      cout << "thread id=" << boost::this_thread::get_id() << " interrupted" << endl;
+      T_END;
+  }
+  T_END;
 }
 
 MyThreadBoost::~MyThreadBoost()
 {
   T_START;
   if( m_thread != nullptr)
-  {
-	  m_thread->interrupt();
-  }
+    {
+      m_thread->interrupt();
+    }
   T_END;
 }
 
 void MyThreadBoost::join()
 {
-	if (m_thread != nullptr)
+  if (m_thread != nullptr)
+    {
+      if (m_thread->joinable())
 	{
-		if (m_thread->joinable())
-		{
-			std::stringstream s;
-			s << "waiting to join thread=" <<  m_thread->get_id();
-			T_LOG(s.str());
-			m_thread->join();
-		}
-		else
-		{
-			cout << "thread=" << m_thread->get_id() << "not joinable" << endl;
-		}
+	  std::stringstream s;
+	  s << "waiting to join thread=" <<  m_thread->get_id();
+	  T_LOG(s.str());
+	  m_thread->join();
 	}
+      else
+	{
+	  cout << "thread=" << m_thread->get_id() << "not joinable" << endl;
+	}
+    }
 }
 
-void
-MyThreadBoost::run()
+void MyThreadBoost::run()
 {
-    T_START;
-    this->m_thread = new boost::thread(boost::ref(*this)); // invokes callable operator
-    T_END;
+  T_START;
+  this->m_thread = new boost::thread(boost::ref(*this)); // invokes callable operator
+  T_END;
 }
 
 
 
-// Start section on ThreadBoostTester; the class that runs the tests on bboost::threads.
-
+/*
+ *
+ * Start section on ThreadBoostTester; the class that runs the tests on boost::threads.
+ *
+ */
 ThreadBoostTester* ThreadBoostTester::m_ThreadBoostTesterPtr = nullptr; // nullptr valid as of C++11
 
-ThreadBoostTester*
-ThreadBoostTester::instance()
+// singleton pattern
+ThreadBoostTester* ThreadBoostTester::instance()
 {
-
-	if( m_ThreadBoostTesterPtr == nullptr)
+  if( m_ThreadBoostTesterPtr == nullptr)
     {
-		m_ThreadBoostTesterPtr = new ThreadBoostTester();
+      m_ThreadBoostTesterPtr = new ThreadBoostTester();
     }
-	return m_ThreadBoostTesterPtr;
+  return m_ThreadBoostTesterPtr;
 }
 
-void
-ThreadBoostTester::runThreadBoostTests()
+void ThreadBoostTester::runThreadBoostTests()
 {
-
 }
 
 
