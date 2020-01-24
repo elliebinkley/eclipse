@@ -1,10 +1,9 @@
 /*
- * myThr
- ead.h
+ *  myThread.h
  *
  *  Created on: Dec 8, 2016
  *      Author: USER
- *      Create N Boost:thread from main and have the main thread wait for theN created threads.
+ *      Create N Boost:thread from main and have the main thread wait for the N created threads.
  *      The created thread will timeout in 60 seconds.
  */
 
