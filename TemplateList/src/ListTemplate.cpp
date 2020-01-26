@@ -6,11 +6,12 @@
  */
 
 #include "../inc/ListTemplate.hpp"
+#include "../inc/Person.hpp"
 
 #include <string.h>
 #include <cassert>
 
-#include "../inc/Person.hpp"
+
 
 using namespace std;
 
