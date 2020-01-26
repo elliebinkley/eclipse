@@ -1,14 +1,6 @@
-//#define BOOST_CHRONO_VERSION 2 issiues on Cywin..
-
-// There are two versions of the input/output chrono functions since Boost 1.52.0.
-// which affects the compilation of time_fmt().
-// Since Boost 1.55.0, the newer version is used by default.
-// If you use a version older than 1.55.0, you must define the macro BOOST_CHRONO_VERSION
-// and set it to 2
-// chrono v1 includes;  does not work on cygwin...
-// #include <boost/chrono/io_v1/chrono_io.hpp>
-// v2 includes; works on cygwin., But need to set
-// #define BOOST_CHRONO_VERSION 2 in file chrono/config.hpp.
+/*
+ * See Readme for description.
+ */
 
 #include <iostream>
 #include <boost/thread.hpp>
@@ -25,105 +17,139 @@ using namespace std;
 #define NUM_SECONDS 3
 
 boost::mutex MyThreadBoost::m_mtx;
+boost::condition_variable MyThreadBoost::m_cv;
 
-MyThreadBoost::MyThreadBoost( const std::string& description ) : m_description(description)
+bool MyThreadBoost::m_isEmpty = true;
+uint32_t MyThreadBoost::m_numWaiting = 0;
+boost::thread::id MyThreadBoost::m_gotIt;
+
+MyThreadBoost::MyThreadBoost( const std::string &description ) : m_description( description )
 {
-  T_START;
-  T_LOG("thread created:" + description);
-  T_END;
+   T_LOG( "thread created:" + description );
 }
 
 // callable operator
+// each threads independently attempts to get ownership; own for three seconds, else wait;
+// do this 3 times then stop.
 void MyThreadBoost::operator()()
 {
-  T_START;
-  stringstream s1;
-  s1 << " thread id:" << m_thread->get_id();
-  m_description.append(s1.str());
-  try
-  {
-      for( int i = 0; i < 3; i++ )
-	{
-	  T_START;
-	  // get the mutex
-	  MyThreadBoost::m_mtx.lock();
-	  stringstream ss;
-	  ss << m_description << " :sleeping for " << m_numSeconds << " for " << i << "th time with the mutex ";
-	  std::string s = ss.str();
-	  T_LOG( s);
+   stringstream s1;
+   s1 << " thread id:" << m_thread->get_id();
+   m_description.append( s1.str() );
 
-	  boost::this_thread::sleep_for( boost::chrono::seconds( m_numSeconds ) );
-	  // unlock mutex;
-	  MyThreadBoost::m_mtx.unlock();
-	  T_END;
-	}
-  }
-  catch (boost::thread_interrupted&)
-  {
-      T_START;
+   try
+   {
+      for( int i = 0; i < 3; )
+      {
+         {
+            // lock mutex
+            boost::unique_lock<boost::mutex> lck{m_mtx};
+            // give other threads a chance to run....
+            // if no thread is running and no other threads are waiting or if they are waiting, then if this thread isn't the
+            // last one to run, then this tread can run.
+            if (( this->m_isEmpty ) &&
+                ( m_numWaiting == 0 || m_gotIt != this->m_thread->get_id() )
+               )
+            {
+               MyThreadBoost::m_gotIt = this->m_thread->get_id();
+               this->m_isEmpty = false;
+
+//             stringstream ss3;
+//             ss3 << m_description << " :got it!!; i=" << i;
+//             T_LOG( ss3.str() );
+            }
+            else
+            {
+               // another thread has it; wait;
+               // wait causes unlocking of mutex
+               stringstream ss3;
+               ss3<< m_description << " :waiting!!!; i=" << i;
+//               T_LOG( ss3.str() );
+               m_numWaiting++;
+               MyThreadBoost::m_cv.wait(lck);
+               // awoken; mutex is automatically relocked on wakeup
+               // should be empty.
+
+//             stringstream ss4;
+//             ss4 << m_description << " :awaken!!!; i=" << i;
+//             T_LOG( ss4.str() );
+
+               m_numWaiting--;
+               continue;
+            }
+         }   // mutex unlocked since lock goes out of scope
+
+         boost::this_thread::sleep_for( boost::chrono::seconds( m_numSeconds ) );
+
+         stringstream ss1;
+         ss1 << m_description << " :waking from sleep; i=" << i;
+         T_LOG( ss1.str() );
+
+
+         {
+            boost::unique_lock<boost::mutex> lck{m_mtx};
+            // should not be empty and this thread should have it
+            assert( !m_isEmpty );
+            assert( m_gotIt ==  m_thread->get_id() );
+
+//          stringstream ss3;
+//          ss3 << " m_isEmpty=" <<  m_isEmpty;
+//          ss3 << " m_gotIt=" <<  m_gotIt  << " getid()=" << m_thread->get_id();
+//          T_LOG( ss3.str() );
+
+            this->m_isEmpty = true;
+            m_cv.notify_one();
+         }  // unlock mutext via lck out of scope
+
+         i++;
+      }
+   }
+   catch( boost::thread_interrupted& )
+   {
+      stringstream ss2;
       MyThreadBoost::m_mtx.unlock();
-      cout << "thread id=" << boost::this_thread::get_id() << " interrupted" << endl;
-      T_END;
-  }
-  T_END;
+      ss2 << "thread id=" << boost::this_thread::get_id() << " interrupted";
+      std::string s = ss2.str();
+      T_LOG( s );
+   }
 }
 
 MyThreadBoost::~MyThreadBoost()
 {
-  T_START;
-  if( m_thread != nullptr)
-    {
+   stringstream ss;
+   ss << "thread id=" << boost::this_thread::get_id() << " DTOR()";
+   std::string s = ss.str();
+   T_LOG( s );
+
+   if( m_thread != nullptr )
+   {
       m_thread->interrupt();
-    }
-  T_END;
+   }
 }
 
 void MyThreadBoost::join()
 {
-  if (m_thread != nullptr)
-    {
-      if (m_thread->joinable())
-	{
-	  std::stringstream s;
-	  s << "waiting to join thread=" <<  m_thread->get_id();
-	  T_LOG(s.str());
-	  m_thread->join();
-	}
+   if( m_thread != nullptr )
+   {
+      if( m_thread->joinable() )
+      {
+//       std::stringstream s;
+//       s << "waiting to join thread=" << m_thread->get_id();
+//       T_LOG( s.str() );
+         m_thread->join();
+      }
       else
-	{
-	  cout << "thread=" << m_thread->get_id() << "not joinable" << endl;
-	}
-    }
+      {
+//       std::stringstream s;
+//       s << "thread=" << m_thread->get_id() << "not joinable" << endl;
+//       T_LOG( s.str() );
+      }
+   }
 }
 
 void MyThreadBoost::run()
 {
-  T_START;
-  this->m_thread = new boost::thread(boost::ref(*this)); // invokes callable operator
-  T_END;
-}
-
-
-
-/*
- *
- * Start section on ThreadBoostTester; the class that runs the tests on boost::threads.
- *
- */
-ThreadBoostTester* ThreadBoostTester::m_ThreadBoostTesterPtr = nullptr; // nullptr valid as of C++11
-
-// singleton pattern
-ThreadBoostTester* ThreadBoostTester::instance()
-{
-  if( m_ThreadBoostTesterPtr == nullptr)
-    {
-      m_ThreadBoostTesterPtr = new ThreadBoostTester();
-    }
-  return m_ThreadBoostTesterPtr;
-}
-
-void ThreadBoostTester::runThreadBoostTests()
-{
+   m_thread = new boost::thread( boost::ref( *this ) ); // invokes callable operator
 }
 
 
