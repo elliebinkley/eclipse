@@ -1,0 +1,117 @@
+BoostThreads project used Boost threads with a condition variable.
+The program starts X threads, where each thread is synchronized via a condition variable which
+allows only one thread to run at at time. 
+The rest are waiting to be notified via the condition variable. 
+The single running thread simply sleeps for three seconds, wakes up 
+and prints a message saying it has awoken, notifies the 
+next thread in line via the condition variable, then waits to be notified. 
+Each thread does this three times, then joins the main thread.
+If no other thread is waiting, the thread skips the notify and wait and continues 
+running. 
+
+The condition variable serves to round robin the scheduling of the threads so that they
+run sequentially and in turn. 
+ 
+ Output looks like:
+  ./BoostThreads.exe 
+20:24:37 :   thread id:7fb52d7c1b80 Start File:../src/MainBoostThreads.cpp   Function:main       Line:22
+Using Boost: 
+ boost version=107100
+ major version=1.
+ minor version=71.
+ patch level=0
+ boost library version=1_71
+ Chrono Version=1
+
+ number of physical threads on this system = 4
+ number of hardware threads on this system = 8
+
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MainBoostThreads.cpp   Function:main       Line:39 Data: creating threads.... 
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:0
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:1
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:2
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:3
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:4
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:5
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:6
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:MyThreadBoost       Line:35 Data: thread created:ThreadBoost:7
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MainBoostThreads.cpp   Function:main       Line:49 Data: running threads.... 
+20:24:37
+20:24:37 :   thread id:7fb52d7c1b80       File:../src/MainBoostThreads.cpp   Function:main       Line:56 Data: main thread waits to join the child threads
+20:24:40
+20:24:40 :   thread id:7fb52b83f700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:1 thread id:7fb52b83f700 :waking from sleep; i=0
+20:24:43
+20:24:43 :   thread id:7fb523fff700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:3 thread id:7fb523fff700 :waking from sleep; i=0
+20:24:46
+20:24:46 :   thread id:7fb52b03e700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:2 thread id:7fb52b03e700 :waking from sleep; i=0
+20:24:49
+20:24:49 :   thread id:7fb52c040700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:0 thread id:7fb52c040700 :waking from sleep; i=0
+20:24:52
+20:24:52 :   thread id:7fb52a83d700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:4 thread id:7fb52a83d700 :waking from sleep; i=0
+20:24:55
+20:24:55 :   thread id:7fb52a03c700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:5 thread id:7fb52a03c700 :waking from sleep; i=0
+20:24:58
+20:24:58 :   thread id:7fb52983b700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:6 thread id:7fb52983b700 :waking from sleep; i=0
+20:25:01
+20:25:01 :   thread id:7fb52903a700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:7 thread id:7fb52903a700 :waking from sleep; i=0
+20:25:04
+20:25:04 :   thread id:7fb52b83f700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:1 thread id:7fb52b83f700 :waking from sleep; i=1
+20:25:07
+20:25:07 :   thread id:7fb523fff700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:3 thread id:7fb523fff700 :waking from sleep; i=1
+20:25:10
+20:25:10 :   thread id:7fb52b03e700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:2 thread id:7fb52b03e700 :waking from sleep; i=1
+20:25:13
+20:25:13 :   thread id:7fb52c040700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:0 thread id:7fb52c040700 :waking from sleep; i=1
+20:25:16
+20:25:16 :   thread id:7fb52a83d700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:4 thread id:7fb52a83d700 :waking from sleep; i=1
+20:25:19
+20:25:19 :   thread id:7fb52a03c700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:5 thread id:7fb52a03c700 :waking from sleep; i=1
+20:25:22
+20:25:22 :   thread id:7fb52983b700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:6 thread id:7fb52983b700 :waking from sleep; i=1
+20:25:25
+20:25:25 :   thread id:7fb52903a700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:7 thread id:7fb52903a700 :waking from sleep; i=1
+20:25:28
+20:25:28 :   thread id:7fb52b83f700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:1 thread id:7fb52b83f700 :waking from sleep; i=2
+20:25:31
+20:25:31 :   thread id:7fb523fff700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:3 thread id:7fb523fff700 :waking from sleep; i=2
+20:25:34
+20:25:34 :   thread id:7fb52b03e700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:2 thread id:7fb52b03e700 :waking from sleep; i=2
+20:25:37
+20:25:37 :   thread id:7fb52c040700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:0 thread id:7fb52c040700 :waking from sleep; i=2
+20:25:40
+20:25:40 :   thread id:7fb52a83d700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:4 thread id:7fb52a83d700 :waking from sleep; i=2
+20:25:43
+20:25:43 :   thread id:7fb52a03c700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:5 thread id:7fb52a03c700 :waking from sleep; i=2
+20:25:46
+20:25:46 :   thread id:7fb52983b700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:6 thread id:7fb52983b700 :waking from sleep; i=2
+20:25:49
+20:25:49 :   thread id:7fb52903a700       File:../src/MyThreadBoost.cpp   Function:operator()       Line:91 Data: ThreadBoost:7 thread id:7fb52903a700 :waking from sleep; i=2
+20:25:49 :   thread id:7fb52d7c1b80   End File:../src/MainBoostThreads.cpp   Function:main       Line:63
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+20:25:49
+20:25:49 :   thread id:7fb52d7c1b80       File:../src/MyThreadBoost.cpp   Function:~MyThreadBoost       Line:123 Data: thread id=7fb52d7c1b80 DTOR()
+laurence@laurence-Aurora:~/eclipse/eclipse-cpp-neon-workspace/BoostThreads/Debug$ 
+ 
+ 
