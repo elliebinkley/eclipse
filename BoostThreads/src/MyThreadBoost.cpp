@@ -152,4 +152,3 @@ void MyThreadBoost::run()
    m_thread = new boost::thread( boost::ref( *this ) ); // invokes callable operator
 }
 
-
