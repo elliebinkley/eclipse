@@ -17,53 +17,49 @@
 using namespace std;
 using namespace boost;
 
-#define NUM_MY_THREADS 3
-
-int
-main ()
+int main()
 {
-  T_START;
+   T_START;
 
-  std::cout << "Using Boost: "
-            << "\n boost version=" << BOOST_VERSION
-			<< "\n major version=" << BOOST_VERSION / 100000     << "."  // major version
-            << "\n minor version=" << BOOST_VERSION / 100 % 1000 << "."  // minor version
-            << "\n patch level=" << BOOST_VERSION % 100                  // patch level
-			<< "\n boost library version=" << BOOST_LIB_VERSION
-            << std::endl;
+   std::cout << "Using Boost: " << "\n boost version=" << BOOST_VERSION << "\n major version="
+         << BOOST_VERSION / 100000 << "." // major version
+         << "\n minor version=" << BOOST_VERSION / 100 % 1000 << "." // minor version
+         << "\n patch level=" << BOOST_VERSION % 100              // patch level
+         << "\n boost library version=" << BOOST_LIB_VERSION
+         << "\n Chrono Version=" << BOOST_CHRONO_VERSION << "\n" << endl;
 
-  //  version of the chrono library
-  std::cout << "\n Chrono Version=" <<  BOOST_CHRONO_VERSION << "\n" << endl;
+   // info on the running machine ...
+   cout << " number of physical threads on this system = " << boost::thread::physical_concurrency()
+         << endl;
+   cout << " number of hardware threads on this system = " << boost::thread::hardware_concurrency()
+         << endl;
+   int numThreads = boost::thread::hardware_concurrency();
 
-  // info on the running machine ...
-  cout << " number of physical threads on this system = " << boost::thread::physical_concurrency() << endl;
-  cout << " number of hardware threads on this system = " << boost::thread::hardware_concurrency() << endl;
+   // make a boost vector that contains smart pointers to MyThreadBoost objects.
+   T_LOG( "creating threads.... " );
+   boost::container::vector<std::unique_ptr<MyThreadBoost>> threadMap;
+   for( int i = 0; i < numThreads; i++ )
+   {
+      stringstream s;
+      s << "ThreadBoost:" << i;
+      std::unique_ptr<MyThreadBoost> p2( new MyThreadBoost( s.str() ) );
+      threadMap.push_back( std::move( p2 ) ); // smartpointer  cannot be copied; they must be moved; p2 is now invalid..
+   }
 
-  // make a boost vector that contains smart pointers to MyThreadBoost objects.
-  T_LOG("creating threads.... ");
-  boost::container::vector<std::unique_ptr<MyThreadBoost>> threadMap;
-  for ( int i=0; i<NUM_MY_THREADS; i++)
-  {
-	    stringstream s;
-	    s << "ThreadBoost:" <<  i;
-	    std::unique_ptr<MyThreadBoost> p2(new MyThreadBoost( s.str() ));
-        threadMap.push_back(std::move(p2));  // smartpointer  cannot be copied; they must be moved; p2 is now invalid..
-  }
+   T_LOG( "running threads.... " );
+   boost::container::vector<std::unique_ptr<MyThreadBoost>>::iterator iter;
+   for( iter = threadMap.begin(); iter != threadMap.end(); iter++ )
+   {
+      (*iter)->run();
+   }
 
-  T_LOG("running threads.... ");
-  boost::container::vector<std::unique_ptr<MyThreadBoost>>::iterator iter;
-  for( iter = threadMap.begin(); iter != threadMap.end(); iter++)
-  {
-	  (*iter)->run();
-  }
+   T_LOG( "main thread waits to join the child threads" );
+   boost::container::vector<std::unique_ptr<MyThreadBoost>>::iterator iter1;
+   for( iter1 = threadMap.begin(); iter1 != threadMap.end(); iter1++ )
+   {
+      (*iter1)->join();
+   }
 
-  T_LOG("main thread waits to join the child threads");
-  boost::container::vector<std::unique_ptr<MyThreadBoost>>::iterator iter1;
-  for( iter1 = threadMap.begin(); iter1 != threadMap.end(); iter1++)
-  {
-  	  (*iter1)->join();
-  }
-
-  T_END;
-  return 0;
+   T_END;
+   return 0;
 }
