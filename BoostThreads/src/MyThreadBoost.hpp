@@ -1,10 +1,6 @@
 /*
- *  myThread.h
+ *  See Readme for description
  *
- *  Created on: Dec 8, 2016
- *      Author: USER
- *      Create N Boost:thread from main and have the main thread wait for the N created threads.
- *      The created thread will timeout in 60 seconds.
  */
 
 #ifndef MYTHREADBOOST_HPP_
@@ -20,54 +16,36 @@
 using namespace std;
 using namespace boost;
 
-class ThreadBoostTester
-{
-public:
-	static ThreadBoostTester* instance();
-	void runThreadBoostTests();
-
-private:
-	// make private the constructor;use the default implementation
-	ThreadBoostTester() = default;
-	// make private the copy constructor;use the default implementation
-	ThreadBoostTester(const ThreadBoostTester& o)= default;
-	// make private the =  operator;use the default implementation
-	ThreadBoostTester& operator= (const ThreadBoostTester& o) = default;
-	// default does not apply to == operator; so write an implementation; make it private;
-	// as a singleton, this should never get called
-	friend bool operator== (const ThreadBoostTester& rhs, const ThreadBoostTester lhs)
-    {
-	    return (rhs == lhs);
-	};
-
-	static ThreadBoostTester* m_ThreadBoostTesterPtr;
-};
 
 class MyThreadBoost
 {
 public:
-  MyThreadBoost( const std::string& description );
+   MyThreadBoost( const std::string &description );
 
-  // disallow copies since thread is inside this object
-  MyThreadBoost( const MyThreadBoost& )= delete;
-  MyThreadBoost&operator= ( const MyThreadBoost& arg ) = delete;
+   // disallow copies since thread is inside this object
+   MyThreadBoost( const MyThreadBoost& ) = delete;
+   MyThreadBoost& operator=( const MyThreadBoost &arg ) = delete;
 
-  // disallow moves since thread is inside this object. Although actually, the boost::thread is a movable object...
-  MyThreadBoost( MyThreadBoost&& o ) noexcept  = delete;
-  MyThreadBoost& operator=( MyThreadBoost&& other ) = delete;
+   // disallow moves since thread is inside this object. Although actually, the boost::thread is a movable object...
+   MyThreadBoost( MyThreadBoost &&o ) noexcept = delete;
+   MyThreadBoost& operator=( MyThreadBoost &&other ) = delete;
 
-  ~MyThreadBoost();
-  void operator()();
-  void run();
-  static boost::mutex m_mtx;
-  void join();
-
+   ~MyThreadBoost();
+   void operator()();
+   void run();
+   void join();
+   static boost::thread::id m_gotIt;
 
 private:
-  std::string m_description;
-  boost::thread* m_thread = nullptr;
-  static const int m_numSeconds = 3;
-};
+   std::string m_description;
+   boost::thread *m_thread = nullptr;
 
+   static const int m_numSeconds = 3;
+   static boost::mutex m_mtx;
+   static boost::condition_variable m_cv;
+   static uint32_t m_numWaiting;
+
+   static bool m_isEmpty;
+};
 
 #endif /* MYTHREADBOOST_HPP_ */
