@@ -2,23 +2,27 @@
  * ListUser.cpp
  *
  *  Created on: Nov 16, 2016
- *      Author: USER
+ *      Author: Burley
  *      A little program that demonstrates implementing a doubly linked list by
  *      a custom template implementation.
+ *      Also shows use of <list> STL
  */
 
-#include <iostream>
-#include <string>
-#include <cstdlib>
-
-#include "AppUser.h"
+#include "../inc/AppUser.hpp"
 
 using namespace std;
 
 int main( void )
 {
     cout << "starting main File=" << __FILE__ << "  line=" << __LINE__ << endl;
-    AppUser appUser;
-    appUser.useListTemplate();
-}
 
+    AppUser appUser;
+
+    // Tests the simple homemade linked list template class.
+    appUser.testListTemplateOfPersons();
+
+    // Run a test that uses the STL linked link
+
+    appUser.testSTL_ListOfPersons();
+
+}

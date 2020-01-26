@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 //#define BOOST_CHRONO_VERSION 2 issues on Cywin..
 
 // There are two versions of the input/output chrono functions since Boost 1.52.0.
@@ -9,6 +10,11 @@
 // #include <boost/chrono/io_v1/chrono_io.hpp>
 // v2 includes; works on cygwin., But need to set
 // #define BOOST_CHRONO_VERSION 2 in file chrono/config.hpp.
+=======
+/*
+ * See Readme for description.
+ */
+>>>>>>> 42789e912da60a7aaf737f539995506daf06f10a
 
 #include <iostream>
 #include <boost/thread.hpp>
