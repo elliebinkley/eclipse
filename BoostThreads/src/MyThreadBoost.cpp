@@ -1,20 +1,6 @@
-<<<<<<< HEAD
-//#define BOOST_CHRONO_VERSION 2 issues on Cywin..
-
-// There are two versions of the input/output chrono functions since Boost 1.52.0.
-// which affects the compilation of time_fmt().
-// Since Boost 1.55.0, the newer version is used by default.
-// If you use a version older than 1.55.0, you must define the macro BOOST_CHRONO_VERSION
-// and set it to 2
-// chrono v1 includes;  does not work on cygwin...
-// #include <boost/chrono/io_v1/chrono_io.hpp>
-// v2 includes; works on cygwin., But need to set
-// #define BOOST_CHRONO_VERSION 2 in file chrono/config.hpp.
-=======
 /*
  * See Readme for description.
  */
->>>>>>> 42789e912da60a7aaf737f539995506daf06f10a
 
 #include <iostream>
 #include <boost/thread.hpp>

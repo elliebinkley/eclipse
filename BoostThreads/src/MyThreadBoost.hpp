@@ -1,15 +1,6 @@
 /*
-<<<<<<< HEAD
- *  myThread.h
- *
- *  Created on: Dec 8, 2016
- *      Author: USER
- *      Create N Boost:thread(s) from main() then main wait for the N created threads.
- *      The created thread will timeout in 60 seconds.
-=======
  *  See Readme for description
  *
->>>>>>> 42789e912da60a7aaf737f539995506daf06f10a
  */
 
 #ifndef MYTHREADBOOST_HPP_
