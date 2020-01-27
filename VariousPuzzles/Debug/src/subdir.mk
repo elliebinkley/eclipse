@@ -8,6 +8,7 @@ CPP_SRCS += \
 ../src/BloomberStringTest.cpp \
 ../src/DuplicateEntries.cpp \
 ../src/HomeMadeSort.cpp \
+../src/LinkedListInC.cpp \
 ../src/RansomNote.cpp \
 ../src/Tries.cpp \
 ../src/ValidateBinaryTree.cpp \
@@ -21,6 +22,7 @@ OBJS += \
 ./src/BloomberStringTest.o \
 ./src/DuplicateEntries.o \
 ./src/HomeMadeSort.o \
+./src/LinkedListInC.o \
 ./src/RansomNote.o \
 ./src/Tries.o \
 ./src/ValidateBinaryTree.o \
@@ -34,6 +36,7 @@ CPP_DEPS += \
 ./src/BloomberStringTest.d \
 ./src/DuplicateEntries.d \
 ./src/HomeMadeSort.d \
+./src/LinkedListInC.d \
 ./src/RansomNote.d \
 ./src/Tries.d \
 ./src/ValidateBinaryTree.d \
