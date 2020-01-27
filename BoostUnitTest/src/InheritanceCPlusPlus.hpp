@@ -20,7 +20,6 @@
 #include <iostream>
 #include <sstream>
 #include <map>
-#include "SharedLibrary/inc/Utilities.hpp"
 
 using namespace std;
 namespace InheritanceCPlusPlus

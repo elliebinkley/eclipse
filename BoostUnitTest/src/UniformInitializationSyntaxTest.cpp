@@ -35,7 +35,6 @@
  *       http://stackoverflow.com/questions/4178175/what-are-aggregates-and-pods-and-how-why-are-they-special
  */
 
-#include <BoostUnitTest/src/UniformInitializationSyntaxTest.hpp>
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
@@ -43,7 +42,10 @@
 #include <algorithm>
 #include <string>
 #include <vector>
-#include <SharedLibrary/inc/MyLogger.hpp>
+
+#include <BoostUnitTest/src/UniformInitializationSyntaxTest.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
+
 
 using namespace std;
 using namespace UniformInit;

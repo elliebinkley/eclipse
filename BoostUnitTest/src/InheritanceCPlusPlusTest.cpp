@@ -11,9 +11,8 @@
 #include <memory>
 #include <cstdlib>
 #include <vector>
-#include "InheritanceCPlusPlus.hpp"
-
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <BoostUnitTest/src/InheritanceCPlusPlus.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>

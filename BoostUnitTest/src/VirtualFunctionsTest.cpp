@@ -12,7 +12,7 @@
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 using namespace std;
 using namespace boost;

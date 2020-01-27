@@ -9,15 +9,14 @@
  *      This program uses various aspects of the std:unique_ptr.
  */
 
-#include <BoostUnitTest/src/SmartPointerTest.hpp>
 #include <iostream>
 #include <sstream>
 #include <exception>
 #include <memory>
 #include <cstdlib>
 #include <vector>
-#include <SharedLibrary/inc/MyLogger.hpp>
-
+#include <BoostUnitTest/src/SmartPointerTest.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 #define BOOST_TEST_DYN_LINK
 #include <boost/test/unit_test.hpp>

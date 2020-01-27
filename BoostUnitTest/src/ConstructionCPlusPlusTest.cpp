@@ -17,6 +17,7 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE C++11+ Syntax Checker    // Master suite with the main() testRunner.
 #include <boost/test/unit_test.hpp>
+#include <vector>
 
 using namespace std;
 using namespace boost;
