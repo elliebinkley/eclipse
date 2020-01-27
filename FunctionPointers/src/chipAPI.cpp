@@ -1,7 +1,7 @@
 /*
  * chipAPI.cpp
  *
- *  Created on: Mar 22, 2017include
+ *  Created on: Mar 22, 2017
  *  Author: Burley
  */
 
