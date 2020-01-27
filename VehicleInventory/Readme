@@ -1,0 +1,244 @@
+This project implements a solution to the "Work Sample Exercise.pdf".  The solution is solved 4 different ways, 
+with 4 different container types, 
+(1) std:vector, 
+(2) boost:intrusive:multiset, 
+(3) std::shared pointers to std:multimap 
+(4) std::shared pointer to std::unordered_multimap.
+
+Each implementation operates on the same set of objects and exectures the same set of operations, e.g. creation, 
+traverse, traverse and write, search by VIN( returns a unique result ) , search by year ( returns a set)
+ and search by model ( returns a set). 
+ 
+ The output is something like:
+ 
+ 
+ 
+ 
+ How many vehicles do you want in the repositories:(Enter 10-10000000)?
+enter number of Vehicles:(e.g. 100,000)
+100000
+Number of Vehicles chosen=100000
+created 100006 vehicles in file:vehicleRepo.txt
+m_vehicleCtorCnt=100006 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=131071 m_vehicleCpCtorCnt=100010 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=231081
+vehicleFile.size()0
+this->m_vehicles.size()100006
+
+
+
+
+ Task 1: Initialize all Repositories....
+
+VehicleRepoVector::init
+ size():100005 duplicates:1
+ insertions/sorting/dups took 276834us.
+m_repoVector has 100005 items
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=727052 m_vehicleCpCtorCnt=4600231 m_vehicleAssignCtorCnt=1026618 m_vehicleDtorCnt=5227278
+
+
+
+VehicleRepoShrPtr::init
+ insertions:100005 duplicates:1
+ took 461267us.
+m_repoShrPtrByModel.size():100005
+m_repoShrPtrByYear.size():100005
+m_repoShrPtrByVin.size():100005
+m_repoShrPtrByVin/Model/Year has 100005 items
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=100006 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=1
+
+
+
+ VehicleRepoShrPtrUnordered:init
+ insertions:100005 duplicates:1
+ took 239490us.
+m_repoShrPtrUnorderedByModel.size():100005
+m_repoShrPtrUnorderedByYear.size():100005
+m_repoShrPtrUnorderedByVin.size():100005
+m_repoShrPtrUnorderedByVin/Model/Year has 100005 items
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=100006 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=1
+
+
+
+ VehicleRepoIntrusive::init
+ insertions:100005 duplicates:1
+ took 798232us.
+m_repoIntrusiveByVin.size():100005
+m_repoIntrusiveByYear size 100005
+m_repoIntrusiveByModel size 100005
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=100006 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+
+
+
+
+ Task 2: Traverse repositories....
+traverseVehicleRepoVector took 1389us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+traverseVehicleRepoShrPtr took 16041us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+traverseVehicleRepoShrPtrUnordered took 13299us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+traverseVehicleRepoIntrusive took 11923us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+
+
+
+
+
+ Task 3: Traverse and Write repositories....
+traverseVehicleRepoVector took 1534us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+traverseVehicleRepoShrPtr took 17437us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+traverseVehicleRepoShrPtrUnordered took 14426us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+traverseVehicleRepoIntrusive took 12928us.
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+
+
+
+
+
+
+ Task 4: Search for vehicles that match by VIN......
+Suggestions:
+VIN126951288
+VIN1039009670
+VIN366309904
+
+enter Vin
+VIN126951288
+VIN126951288
+
+Model:mustang          Year:1999   Vin:VIN126951288     color:red       Manufacturer:Ford   Address:0x7f0c9d15bcd0
+searchByVinVehicleRepoVector found vehicle with Vin:VIN126951288 took 52us.
+
+m_vehicleCtorCnt=1 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=1
+
+Model:mustang          Year:1999   Vin:VIN126951288     color:red       Manufacturer:Ford   Address:0x55eae354f280
+searchByVinVehicleRepoShrPtr found vehicle with Vin:VIN126951288 took 31us.
+
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+Model:mustang          Year:1999   Vin:VIN126951288     color:red       Manufacturer:Ford   Address:0x55eae54f17c0
+searchByVinVehicleRepoShrPtrUnordered found vehicle with Vin:VIN126951288 took 25us.
+
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+Model:mustang          Year:1999   Vin:VIN126951288     color:red       Manufacturer:Ford   Address:0x7f0c9c48f870
+searchByVinVehicleRepoIntrusive found vehicle with Vin:VIN126951288 took 35us.
+
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+VIN126951288
+
+ continue searching? enter y to continue:n
+
+
+
+
+ Task 5: Search for vehicles that match by year(1990-2022) ......
+
+enter year:
+1998
+searchByYearVehicleRepoVector found 3158 vehicles for year:1998 took 22140us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=4095 m_vehicleCpCtorCnt=103163 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=107258
+
+searchByYearVehicleRepoShrPtr found 3158 vehicles for year:1998 took 303us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+searchByYearVehicleRepoShrPtrUnordered found 3158 vehicles for year:1998 took 580us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+searchByYearVehicleRepoIntrusive found 3158 vehicles for year:1998 took 335us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+ continue searching? enter y to continue:n
+
+
+
+
+ Task 6: Search for vehicles that match by model: ......
+enter model index:1-11:
+1 mustang
+2 F150
+3 i3
+4 i8
+5 x7
+6 z4
+7 camaro
+8 Model S
+9 Model 3
+10 Corolla
+11 Camry
+11
+searchByModelVehicleRepoVector found 9112 vehicles for model:Camry took 26118us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=16383 m_vehicleCpCtorCnt=109117 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=125500
+
+searchByModelVehicleRepoShrPtr found 9112 vehicles for model:Camry took 763us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+searchByModelVehicleRepoShrPtrUnordered found 9112 vehicles for model:Camry took 1616us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+searchByModelVehicleRepoIntrusive found 9112 vehicles for model:Camry took 838us. 
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=0
+
+
+
+ continue searching? enter y to continue:n
+
+ 
+ Printing Results for 100005 vehicles 
+initialization VehicleRepoVector                 276834usec
+initialization VehicleRepoShrPtr                 461267usec
+initialization VehicleRepoShrPtrUnordered        239490usec
+initialization VehicleRepoIntrusive              798232usec
+
+traverse       VehicleRepoVector                   1389usec
+traverse       VehicleRepoShrPtr                  16041usec
+traverse       VehicleRepoShrPtrUnordered         13299usec
+traverse       VehicleRepoIntrusive               11923usec
+
+traverseWrite  VehicleRepoVector                   1534usec
+traverseWrite  VehicleRepoShrPtr                  17437usec
+traverseWrite  VehicleRepoShrPtrUnordered         14426usec
+traverseWrite  VehicleRepoIntrusive               12928usec
+
+searchByVin    VehicleRepoVector                     52usec
+searchByVin    VehicleRepoShrPtr                     31usec
+searchByVin    VehicleRepoShrPtrUnordered            25usec
+searchByVin    VehicleRepoIntrusive                  35usec
+
+searchByYear   VehicleRepoVector                  22140usec
+searchByYear   VehicleRepoShrPtr                    303usec
+searchByYear   VehicleRepoShrPtrUnordered           580usec
+searchByYear   VehicleRepoIntrusive                 335usec
+
+searchByModel  VehicleRepoVector                  26118usec
+searchByModel  VehicleRepoShrPtr                    763usec
+searchByModel  VehicleRepoShrPtrUnordered          1616usec
+searchByModel  VehicleRepoIntrusive                 838usec
+
+cleaning up m_repoVector
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=100005 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=200010
+cleaning up m_repoShrPtrByVin
+cleaning up m_repoShrPtrByYear
+cleaning up m_repoShrPtrByModel
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=100005
+cleaning up m_repoShrPtrUnorderedByVin
+cleaning up m_repoShrPtrUnorderedByYear
+cleaning up m_repoShrPtrUnorderedByModel
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=100005
+cleaning up m_repoIntrusiveByYear:100005
+cleaning up m_repoIntrusiveByModel:100005
+cleaning up and depose m_repoIntrusiveByVin
+m_vehicleCtorCnt=0 m_vehicleLineCtorCnt=0 m_vehicleMoveCtorCnt=0 m_vehicleCpCtorCnt=0 m_vehicleAssignCtorCnt=0 m_vehicleDtorCnt=100005
+  
