@@ -12,9 +12,9 @@
 #include <memory>
 #include <cstdlib>
 #include <vector>
-#include "InheritanceCPlusPlus.hpp"
 
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <BoostUnitTest/src/InheritanceCPlusPlus.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 using namespace std;
 using namespace InheritanceCPlusPlus;
