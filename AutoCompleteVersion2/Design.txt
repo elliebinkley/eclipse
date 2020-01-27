@@ -1,0 +1,112 @@
+Design:
+
+1. Read the file into a std::string or a char[] buffer.  The buffer is owned by Corpus object.
+   Note: When the Corpus goes out of scope the buffer is freed.  
+2. Cleanup the uppercase to lower case and eliminate trailing and leading white space and 
+   create string_view for each thread.
+   a. Find out how many cores this box has. That becomes your thread pool, say X threads.  
+      The Corpus owns the thread pool. When the corpus is destroyed the thread pool is destroyed.  
+   b. Divide the buffer into X segments and assign a segment to a thread
+      where each thread iterates over each segment and cleans it up. 
+      The thread will replace upper case with lower case, and 
+      replacing trailing/leading white space with C/R. 
+      Strings of zero length are ignored. Strings are delimited in the char buffer by a C/R. 
+      Illegal characters cause the string to be ignored.
+   c. When a string is cleaned up, the string is profiled with a created structure.
+      struct StringProfile {
+       uint32_t m_index;    // index into the char[] buffer
+       uint32_t m_length;   // length of string.  
+      }  
+      ( 8 bytes ) to represent where the string is in the char[] buffer. ( This is smaller than
+      a string_view class which is 16 bytes, otherwise string_view would be used. Note that
+      a corpus of 2**32 = 4 billion chars is supported. )
+        
+      StringProfiles are allocated by a StringProfileAllocator class which allocated them 
+      in groups of 128 as needed. A vector keeps track of the allocated groups of 128. An index
+      indicates the next free item.  Each thread owns its own StringProfileAllocator. 
+      When the thread is destroyed the StringProfileAllocator is destroyed which frees the memory.
+3. Level the StringProfileAllocators. 
+   Once all segments in the char[] buffer are described by StringProfiles, the threads join and the master thread
+   totals the number of profiles e.g. Z. Then StringProfileAllocators are leveled, by moving around StringProfiles  
+   so that each StringProfileAllocator has the same number of StringProfiles, e.g. Z/X. 
+4. Create a trie structure.  Copy the stringProfile to the leaves of the trie.
+5. Compress the trie structure from vector to arrays and destroy the StringProfileAllocators.  
+6. Search for matches. If num duplicates are zero, then just print out as you find them. Else use the FoundItems
+   structure which use the leaves of the trie to point to strings in the buffer.  
+7. If done seaching, destroy the Corpus. 
+8. Items that are found need a container to store the found strings or references to the found strings.
+   If the maximum number of outputs desired is X, then the results 
+   container should hold a maximum of X items. 
+   This means that an item may get bumped from the container if X is exceeded when a new item with
+   a higher number of duplicates is added. Using a multimap with elements 
+   ( key=numDup, value=string) was simpler and slightly more efficient than a map with elements
+   ( key=numDup, value=doubly linked list of strings).
+    
+   The table below shows some results:
+                                      Search    Search     Search   Search                                                              
+        numItems numItem  query       Corpus0   Corpus0A  Corpus1  Corpus2  #results     corpusFileName  
+        in map   in file  complete    usec      usec       usec     usec      
+   ------------------------------------------------------------------------------------------------------------           
+   1    370104   1110312   ,a,5       28047       55670      31751    31558        5      words_big.txt
+   2    370104   1110312   ,about,5      41                  27574    26632        2      words_big.txt    
+   2    370104   1110312   ,a,70000   60823       77445      53739    52569    25417      words_big.txt    
+   3    370104   1110312   ,a,10000   38970       62359      39930    47070    10000      words_big.txt    
+   4    370104   1110312   ,a,20000   50579       65291      47782    48466    20000      words_big.txt    
+   5    370104   1110312   ,,2000000 825038        ----     493690   472489   370104      words_big.txt    
+   6    370104   1110312   ,,0       310883        ----      87972    84665   370104      words_big.txt    
+   7    370104   1110312   Init      6815155               3147076  4088836   370104      words_big.txt   
+   
+   
+   8    370104   1110312   VmDATA(KB) 75768                   29304  26876    370104     words_big.txt     
+
+   
+   Corpus 0 = trie of vector< unique_ptr<Letter>>; FoundItems is a std::multimap<numDups,std::string>
+   Corpus 0A= Similar to Corpus 0 but the Found structure was customized instead of 
+              using std::multi_map. Since itwas slower than Corpus1, the implementation was deleted.            
+   Corpus 1 = std::map<string,numDups>;  
+              FoundItems is a std::multimap<numDups,std::string_view> where string_view is a view into the map.
+   Corpus 2 = Similar to Corpus 1 except that a char* of continguous characters is
+              used to hold all the non-duplicated strings from the initial file.
+              The thinking is that string_views ( 16 bytes) could be used for each string 
+              instead of std::string, thus saving memory. 
+              the memory savings was about (29304 - 26876)/29304 = 8%.
+              The basic design is:  
+              std::map<string_view,numDups> where string_view is a view into the char* array.  
+              FoundItems is a std::multimap<numDups,std::string_view> where 
+              string_view is a view into the char*; same as Corpus 1.
+              Note that size was VmData=56180( after compression ) - VmData=29304 ( before compression)
+              indicating that the char* plus the std::map<string_view,int> took an
+              26876KB.
+  Corpus 3 =  Similar to Corpus 0, but use c structures to minimize memory. The trie structure is about
+              3 times the VmData of the Corpus 1, sue to the overhead of a trie for each letter. 
+               
+  
+   
+  
+    
+   Conclusions:FoundItems class was implemented with std::multimap instead of a std::map of 
+   std::list(s); e.gmap+list.
+   
+   To support multithreading, different threads will create their own FoundItems class and then 
+   merge the results when done.  
+   
+9.  Put in a data structure for tree extensions. 
+10. Put in an alternative design using just a map instead of a trie. Done. 
+11. Minimize memory by redoing the trie structure to not use vectors but to use arrays, this will save memory. 
+12. Use boost::ptr_vector instead of std::vector<unique_ptr> since the boost implementatin 
+    is optimized for pointers. 
+    Tried this and ptr_vector cannot handle polymorphic classes very well, when the 
+    derived class has methods not in the base class. Cannot cast the pointer. 
+    Plus, the internet said ptr_vector is not much faster than std::vector with unique_ptr. 
+    Took out. 
+13. Optimize performance by allocating memory upfront for 29 letters for the m_lettermap vectors. Done.
+    Did not increase performance. Took out. 
+14. For map, create another Corpus using stringview. 
+
+   
+        
+      
+      
+      
+   
+   
