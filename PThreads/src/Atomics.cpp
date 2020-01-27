@@ -26,7 +26,7 @@
 #include <atomic>      // C++ version
 
 
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 static const unsigned int NUM_THREADS = 400;
 static const unsigned int COUNT =  10000;

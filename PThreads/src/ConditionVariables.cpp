@@ -51,7 +51,7 @@
 #include <iostream>
 #include <atomic>
 
-#include "SharedLibrary/inc/MyLogger.hpp"
+#include "UtilitiesLib/inc/MyLogger.hpp"
 #include "../inc/PThreadUtilities.hpp"
 
 static const unsigned int NUM_PROC = 90; // 256 is the max number of processes allowed; see ulimit -a

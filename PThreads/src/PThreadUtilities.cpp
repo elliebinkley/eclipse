@@ -10,7 +10,7 @@
 #include <cstring>
 #include <atomic>
 #include <cassert>
-#include "SharedLibrary/inc/MyLogger.hpp"
+#include "UtilitiesLib/inc/MyLogger.hpp"
 #include "../inc/PThreadUtilities.hpp"
 
  using namespace std;

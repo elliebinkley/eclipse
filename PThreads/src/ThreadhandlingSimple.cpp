@@ -45,7 +45,7 @@
 #include <cstdlib>
 #include <vector>
 
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 using namespace std;
 

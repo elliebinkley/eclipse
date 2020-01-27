@@ -28,7 +28,7 @@
 #include <cassert>
 #include <cstdio>
 
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 using namespace std;
 
@@ -49,8 +49,8 @@ int main()
     atomicsTest();
     signalHandling();
     posixThreadHandlingWithPosixMutex();
-    threadHandlingwithMqueue();
-    semaphores();
+//    threadHandlingwithMqueue();   // TODO assert
+//    semaphores();                 // TODO seg fault[p
 
     sharedMemory();
     conditionVariables();

@@ -16,7 +16,7 @@
 #include <atomic>
 #include <sstream>
 #include <unistd.h>
-#include "SharedLibrary/inc/MyLogger.hpp"
+#include "UtilitiesLib/inc/MyLogger.hpp"
 #include "../inc/PThreadUtilities.hpp"
 
 NUMERROR_TYPE numErrors;

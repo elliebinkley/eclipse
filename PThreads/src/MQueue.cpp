@@ -33,7 +33,7 @@
 #include <atomic>
 #include <sstream>
 
-#include <SharedLibrary/inc/MyLogger.hpp>
+#include <UtilitiesLib/inc/MyLogger.hpp>
 
 using namespace std;
 
