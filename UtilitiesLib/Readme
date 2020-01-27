@@ -1,0 +1,95 @@
+Synopsis:  This project ( UtilitiesLib), is a shared library.  It contains a simple logger class. 
+           The purpose of this project is to show how to compile and run a shared library
+           under Cygwin and/or Linux Ubuntu. 
+      
+Description: On windows shared libraries are.dll files 
+             On Linux shared libraries are .so files located under /usr/lib/x86_64-linux-gnu.   
+  There are four things to configure for running shared libraries.
+   
+   1. Shared library compilation under Eclipse IDE Version: 2019-09 R (4.13.0) Build id: 20190917-1200:
+      If project A is using a shared libary B,  then for project B:
+      (a) make sure project B was created as a shared library project. 
+          See Project settings Project Settings->C/C++ Build -> Settings->C++ Linker->Shared Libraries;
+          make sure the shared library box is checked. Set the soname; this is an internal name embedded 
+          in the library which can be used to communicate the version of the shared library. 
+      (b) Compile the shared library in project B: e.g. UtilitiesLib project. 
+          The compilation output ( for Linux ) should be something like:
+     	  	make all 
+			Building file: ../src/MyLogger.cpp
+			Invoking: GCC C++ Compiler
+			g++ -std=c++1y -I"/home/laurence/eclipse/eclipse-cpp-neon-workspace/UtilitiesLib/inc" -O0 -g3 -Wall -c 
+			-fmessage-length=0 -fPIC -pthread -MMD -MP -MF"src/MyLogger.d" -MT"src/MyLogger.o" 
+			-o "src/MyLogger.o" "../src/MyLogger.cpp"
+			Finished building: ../src/MyLogger.cpp
+			 
+			Building target: libUtilitiesLib.so
+			Invoking: GCC C++ Linker
+			g++ -shared -pthread -o "libUtilitiesLib.so"  ./src/MyLogger.o   -lboost_system -lboost_date_time -lboost_chrono
+			Finished building target: libUtilitiesLib.so
+			 
+		 Note the completed library is called libUtilitiesLib.so. 
+		 Note that the -vPIC option is required under Linux but not cygwin.This can be set via the checkbox under 
+		 Project Settings->C/C++ Build -> Settings->GCC C++ compiler->Miscellaneous. 
+          
+      If project A is using a shared libary B,  then for project : 
+      
+      (a) see Project Settings->C/C++ Build -> Settings->C++ Linker->Libraries and 
+          set the name of the library. e.g UtilitiesLib 
+          Do not include the .dll suffix (windows) or the .so suffix ( Linux).
+          Do not include the a prefix, e.g. "lib". 
+      (b) set the Library path so eclipse knows where to find the library.  
+          See Project Settings->C/C++ Build -> Settings->C++ Linker. 
+      (c) Comple the application with the shared library. 
+      		Building target: BoostUnitTest.exe
+			Invoking: GCC C++ Linker
+			g++ -L"/home/laurence/eclipse/eclipse-cpp-neon-workspace/UtilitiesLib/Debug" -Wl,--out-implib=UtilitiesLib_1.0.0
+			 -pthread -o "BoostUnitTest.exe"  ./src/ConstructionCPlusPlusTest.o ./src/InheritanceCPlusPlus.o 
+			 ./src/InheritanceCPlusPlusTest.o ./src/SmartPointerTest.o ./src/UniformInitializationSyntaxTest.o 
+			 ./src/VirtualFunctionsTest.o 
+			 -lUtilitiesLib -lboost_system -lboost_unit_test_framework -lboost_thread -lboost_date_time -lboost_chrono
+			Finished building target: BoostUnitTest.exe 
+   			where -l has the library name (m either ending with .dll or .so for windows/Linux respectively) and the -L 
+            gives the path to the library. Note that slashes are different for windows and Linux. 
+            
+   2. If compiling/linking on the command line:
+      the makefile should have the library path set as part of the -L option, e.g.
+      g++ -L"C:\Laurence\eclipse\eclipse-cpp-neon-workspace\SharedLibrary\Debug" -o "BoostUnitTest.exe" $(OBJS) $(USER_OBJS) $(LIBS) 
+      $(LIBS) should have the list of libraries to be linked and is defined in the objects.mk file. 
+      
+      Another technique is to add the -R option e.g. -R /usr/local/lib, to the linker command line. 
+      This tells the linker to build in the library path into the
+      executable, thus avoiding having to use the $PATH,  but this only works on ELF format executables for Linux.  
+      Cygwin produces a PE32+ windows executable, so -R does not work.  
+      
+   3. Running executables that use shared libraries in Eclipse:
+      When executing "Run As" inside eclipse, it needs to find the shared library. Put the library into the eclipse $PATH variable. 
+      $PATH is defined under project properties->C/C++ Build -> environment variables. For example, add C:/cygwin64/usr/local/lib to the
+      $PATH. Place the shared library in that directory. Run As-> should then work. 
+      Note that execution does not work if the shared library is a softlink, e.g. Under C:/cygwin64/usr/local/lib, the file is:
+      SharedLibrary.dll.softlink -> /cygdrive/c/Laurence/eclipse/eclipse-cpp-neon-workspace/SharedLibrary/Debug/SharedLibrary.dll.
+      
+   4. Running executables via the command line:
+      Make sure the libary is placed into a standard directory used by the linker, e.g. /user/local/lib. 
+      For Linux, make sure that this directory is in file  
+      /etc/ld.so.conf.d/x86_64-linux-gnu.conf.  
+      Run ldconfig.  This will make sure run time bindings picks up the new shared library. 
+      See https://askubuntu.com/questions/350068/where-does-ubuntu-look-for-shared-libraries.  
+      
+      For Cygwin, the standard library directory must be in the bash shell $PATH variable. 
+      
+      
+      From the bash command line, run the executable, e.g. ./BoostUnitTest.exe.  
+      If the executable cannot find the library, run ldd on the application object, e.g. ldd BoostUnitTest.exe.
+      This will give a list of libraries the applicaton needs and where it can find them. 
+
+   Notes:
+   1. Note that the variable LD_LIBRARY_PATH only works for linking, not execution in a CYGWIN environment. 
+   2. See ldd for dynamic library dependencies. See ldconfig for setting up shared libraries under Linux.
+   
+ 
+   
+ 
+   
+   
+   
+      
