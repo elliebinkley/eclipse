@@ -50,7 +50,6 @@ void atomicsTest()
 {
     T_START
 
-    z = 0;
     r.store(0);   // same as r = 0;
 
     stringstream ss;

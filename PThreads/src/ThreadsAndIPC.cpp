@@ -43,13 +43,12 @@ extern void threadBarrier();
 
 int main()
 {
-    printf("start\n");
     T_START;
 
-    atomicsTest();
-    signalHandling();
-    posixThreadHandlingWithPosixMutex();
-//    threadHandlingwithMqueue();   // TODO assert
+//    atomicsTest();
+//    signalHandling();
+//    posixThreadHandlingWithPosixMutex();
+    threadHandlingwithMqueue();   // TODO assert
 //    semaphores();                 // TODO seg fault[p
 
     sharedMemory();
