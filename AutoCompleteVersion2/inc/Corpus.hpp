@@ -50,7 +50,6 @@ private:
    void init();
    static bool runSearchThread( Corpus* corpus, const std::string& query, unsigned int maxResults );
    unsigned int m_maxThreads = 0;
-   std::vector<std::unique_ptr<std::thread>> m_currentThreads;
    std::vector<std::future<bool>> m_currentFuture;
    std::mutex m_mtxSearch;
    std::condition_variable m_cv;
