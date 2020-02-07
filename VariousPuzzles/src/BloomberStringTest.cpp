@@ -21,26 +21,26 @@
  * The  input is standard input
  * hellotheworld -> 2h2e3l2otwrd
  *
-  */
+ */
 
 using namespace std;
 
 extern std::string getInput();
 extern void bloombergStringTestVersion1(const std::string& input );
 
-class LetterTemp
+class Letter
 {
   public:
-  LetterTemp(char letter, int numDups ): m_letter(letter), m_numDups(numDups) {};
+  Letter(char letter, int numDups ): m_letter(letter), m_numDups(numDups) {};
 
-  bool operator() ( const LetterTemp& item ) const
+  bool operator() ( const Letter& item ) const
   {
     bool ret= ( m_letter < item.m_letter );
     //cout << "< " << ret << " m_letter=" << m_letter << " item.m_letter" << item.m_letter << endl;
     return ret;
   }
 
-  bool operator== ( const LetterTemp& item ) const
+  bool operator== ( const Letter& item ) const
   {
     bool ret = ( m_letter == item.m_letter );
     //cout << "== " << m_letter << endl;
@@ -54,10 +54,10 @@ class LetterTemp
 namespace std
 {
   template<>
-    struct hash<LetterTemp>
+    struct hash<Letter>
     {
       size_t
-      operator()(const LetterTemp & obj) const
+      operator()(const Letter & obj) const
       {
     // cout << "calling template hash " << obj.m_letter << endl;
         return hash<char>()(obj.m_letter);
@@ -125,31 +125,36 @@ std::string getInput()
     return input;
 }
 
+
+/* use an unorderer_set to keep track of letters and how many times they appeared.
+ * use a queue to remember how they are ordered
+ * have the queue and the unordered_set share Letter via shared pointers.
+ */
 void bloombergStringTestVersion1(const std::string& input )
 {
    T_START
 
-  unordered_set<shared_ptr<LetterTemp>,Deref::Hash, Deref::Compare> s2;
-  queue<shared_ptr<LetterTemp>>  qRecTemp;
+  unordered_set<shared_ptr<Letter>,Deref::Hash, Deref::Compare> s2;
+  queue<shared_ptr<Letter>>  qRec;
 
   for( const auto& iter : input )
   {
-      shared_ptr lRecTemp = make_shared<LetterTemp>(iter,1);
-      auto pairTemp = s2.insert(lRecTemp);
-      if( !(pairTemp.second ))
+      shared_ptr lRec = make_shared<Letter>(iter,1);
+      auto pair = s2.insert(lRec);
+      if( !(pair.second ))
       {
-         (*pairTemp.first)->m_numDups++;   // already present, increment dup count
+         (*pair.first)->m_numDups++;   // already present, increment dup count
       }
        else
       {
-         qRecTemp.push(lRecTemp);
+         qRec.push(lRec);
       }
   }
   cout << "\"";
-  while( !qRecTemp.empty() )
+  while( !qRec.empty() )
   {
-    shared_ptr<LetterTemp> item = qRecTemp.front();
-    qRecTemp.pop();
+    shared_ptr<Letter> item = qRec.front();
+    qRec.pop();
     if ( item->m_numDups != 1 ) cout << item->m_numDups;
     cout << item->m_letter;
   }
