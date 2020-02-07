@@ -9,10 +9,10 @@ CPP_SRCS += \
 ../src/DuplicateEntries.cpp \
 ../src/HomeMadeSort.cpp \
 ../src/LinkedListInC.cpp \
+../src/Main.cpp \
 ../src/RansomNote.cpp \
 ../src/Tries.cpp \
 ../src/ValidateBinaryTree.cpp \
-../src/VariousPuzzles.cpp \
 ../src/createStairCase.cpp \
 ../src/inputOutputExample.cpp \
 ../src/reverseWords.cpp 
@@ -23,10 +23,10 @@ OBJS += \
 ./src/DuplicateEntries.o \
 ./src/HomeMadeSort.o \
 ./src/LinkedListInC.o \
+./src/Main.o \
 ./src/RansomNote.o \
 ./src/Tries.o \
 ./src/ValidateBinaryTree.o \
-./src/VariousPuzzles.o \
 ./src/createStairCase.o \
 ./src/inputOutputExample.o \
 ./src/reverseWords.o 
@@ -37,10 +37,10 @@ CPP_DEPS += \
 ./src/DuplicateEntries.d \
 ./src/HomeMadeSort.d \
 ./src/LinkedListInC.d \
+./src/Main.d \
 ./src/RansomNote.d \
 ./src/Tries.d \
 ./src/ValidateBinaryTree.d \
-./src/VariousPuzzles.d \
 ./src/createStairCase.d \
 ./src/inputOutputExample.d \
 ./src/reverseWords.d 
