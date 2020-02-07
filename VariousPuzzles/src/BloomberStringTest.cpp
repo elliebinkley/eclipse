@@ -21,15 +21,13 @@
  * The  input is standard input
  * hellotheworld -> 2h2e3l2otwrd
  *
- * The puzzle is solved 3 different ways, e.g. bloombergStringTest1(1,2,3 )
- */
+  */
 
 using namespace std;
 
 extern std::string getInput();
 extern void bloombergStringTestVersion1(const std::string& input );
 
-// used in bloombergStringTestVersion3()
 class LetterTemp
 {
   public:
@@ -53,7 +51,6 @@ class LetterTemp
   int  m_numDups;
 };
 
-// used in bloombergStringTestVersion3()
 namespace std
 {
   template<>
@@ -68,7 +65,6 @@ namespace std
     };
 }
 
-// used in bloombergstringtestVersion3()
 struct Deref
 {
   struct Hash
