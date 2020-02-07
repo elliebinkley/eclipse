@@ -5,25 +5,92 @@
  *      Author: USER
  */
 
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <map>
-#include <cstdlib>
-#include "stdio.h"
-#include "string.h"
+#include <memory>
+#include <queue>
+#include <unordered_set>
 #include "Utilities.hpp"
 
 /* given a string, delete all duplicate characters and prefix the first instance of the
- * character with the number of occurrences duplicates
+ * character with the number of occurrences if > 1.
  * The  input is standard input
  * hellotheworld -> 2h2e3l2otwrd
+ *
+ * The puzzle is solved 3 different ways, e.g. bloombergStringTest1(1,2,3 )
  */
 
 using namespace std;
 
 extern std::string getInput();
-extern void bloombergStringTestVersion1(std::string input );
-extern void bloombergStringTestVersion2(std::string input );
+extern void bloombergStringTestVersion1(const std::string& input );
+
+// used in bloombergStringTestVersion3()
+class LetterTemp
+{
+  public:
+  LetterTemp(char letter, int numDups ): m_letter(letter), m_numDups(numDups) {};
+
+  bool operator() ( const LetterTemp& item ) const
+  {
+    bool ret= ( m_letter < item.m_letter );
+    //cout << "< " << ret << " m_letter=" << m_letter << " item.m_letter" << item.m_letter << endl;
+    return ret;
+  }
+
+  bool operator== ( const LetterTemp& item ) const
+  {
+    bool ret = ( m_letter == item.m_letter );
+    //cout << "== " << m_letter << endl;
+    return ret;
+  }
+
+  char m_letter;
+  int  m_numDups;
+};
+
+// used in bloombergStringTestVersion3()
+namespace std
+{
+  template<>
+    struct hash<LetterTemp>
+    {
+      size_t
+      operator()(const LetterTemp & obj) const
+      {
+    // cout << "calling template hash " << obj.m_letter << endl;
+        return hash<char>()(obj.m_letter);
+      }
+    };
+}
+
+// used in bloombergstringtestVersion3()
+struct Deref
+{
+  struct Hash
+  {
+    template<typename T>
+    size_t operator() (shared_ptr<T> const& p) const
+    {
+      // cout << "calling shared_ptr template hash " << p->m_letter << endl;
+      return hash<T>()(*p);
+    }
+  };
+  struct Compare
+  {
+    template<typename T>
+    size_t operator() (shared_ptr<T> const& lhs,
+               shared_ptr<T> const& rhs ) const
+    {
+      // cout << "calling shared_ptr template Compare " << lhs->m_letter << " " <<  rhs->m_letter <<  endl;
+      return ( *lhs == *rhs );
+    }
+  };
+};
 
 void bloombergStringTest()
 {
@@ -34,7 +101,6 @@ void bloombergStringTest()
                << "eg. hellotheworld -> 2h2e3l2otwrd \n  " << std::endl;
     std::string input = getInput();
     bloombergStringTestVersion1(input);
-    bloombergStringTestVersion2(input);
     T_END
 }
 
@@ -47,111 +113,51 @@ std::string getInput()
     {
         if( input.size() != 0 ) break;
     }
-    std::cout << "input  =\"" << input << "\"" << std::endl;
+
+    for( auto& iter : input )
+    {
+
+        // char must be between a and z.
+        if( !isalpha( (char) iter ) || !islower( (char) iter ))
+        {
+            cerr << "isalpha() or islower() failed; bad input=" << iter << endl;
+            cerr << "changing to 'a'" << endl;
+            iter = 'a';
+        }
+    }
+    cout << "input=" << input << endl;
     return input;
 }
 
-void bloombergStringTestVersion1(std::string input )
+void bloombergStringTestVersion1(const std::string& input )
 {
-    // version 1
-    T_START
-    cout << "Method 1" << endl;
+   T_START
 
-    int length = input.size();
-    char inputStr[length + 1] { };
-    char outputStr[2 * length] { };
+  unordered_set<shared_ptr<LetterTemp>,Deref::Hash, Deref::Compare> s2;
+  queue<shared_ptr<LetterTemp>>  qRecTemp;
 
-    int outIdx = 0;
-
-    strncpy( inputStr, input.c_str(), length );
-
-    for( int i = 0; i < length; i++ )
-    {
-        // char must be between a and z.
-        if( ! isalpha( (char) inputStr[i] ) ) continue;
-        if( ! islower( (char) inputStr[i] ) ) continue;
-
-        int numDups = 0;
-        for( int k = i + 1; k < length; k++ )
-        {
-            if( inputStr[i] == inputStr[k] )
-            {
-                inputStr[k] = '?'; // placeholder so it gets skipped.
-                numDups++;
-            }
-        }
-
-        if( numDups )
-        {
-            char numberStr[5];
-            sprintf( numberStr, "%d", numDups + 1 );
-            strcat( outputStr, numberStr );
-            outIdx += strlen( numberStr );
-        }
-        outputStr[outIdx] = inputStr[i];
-        outIdx++;
-    }
-    std::cout << "output =\"" << outputStr << "\"" <<  std::endl;
-    cout << "Method 1 End" << endl;
-    T_END
-
+  for( const auto& iter : input )
+  {
+      shared_ptr lRecTemp = make_shared<LetterTemp>(iter,1);
+      auto pairTemp = s2.insert(lRecTemp);
+      if( !(pairTemp.second ))
+      {
+         (*pairTemp.first)->m_numDups++;   // already present, increment dup count
+      }
+       else
+      {
+         qRecTemp.push(lRecTemp);
+      }
+  }
+  cout << "\"";
+  while( !qRecTemp.empty() )
+  {
+    shared_ptr<LetterTemp> item = qRecTemp.front();
+    qRecTemp.pop();
+    if ( item->m_numDups != 1 ) cout << item->m_numDups;
+    cout << item->m_letter;
+  }
+  cout << "\"" << endl;
 }
 
-void bloombergStringTestVersion2(std::string input )
-{
-    T_START
-    cout << "Method 2" << endl;
-
-    // find out how many times a letter has occurred and record this in the occurrence map.
-    // if a duplicate is detected in the input string, replace it with a "?"
-    std::map<char, int> occurrenceMap;
-    std::string::iterator iter;
-    for( iter = input.begin(); iter != input.end(); iter++ )
-    {
-        if( ! isalpha( (char) (* iter) ) ) continue;
-        if( ! islower( (char) (* iter) ) ) continue;
-        // insertion into a map will return false as an map pair entry if the key exists already
-        // for the pair being inserted.
-        // false is returned as a std::pair with the first part of the pair an iterator to the found
-        // element pair.
-        std::pair<std::map<char, int>::iterator, bool> ret;
-        ret = occurrenceMap.insert( std::pair<char, int>( * iter, 1 ) );
-        if( ret.second == false ) // already in array
-        {
-            // replace the duplicate with a "?"  in the original input string
-            * iter = '?';
-            // increment the occurrence count in the map
-            ret.first->second++;
-        }
-    }
-
-    // walk through the input string and print out the letters and their occurrence count if > 1.
-    std::cout << "output =\"";
-    map<const char, int>::iterator findMapValue;
-    // walk through the input string and print out the characters that are not a "?, along with the count..
-    for( const auto &iter1 : input )
-    {
-
-        if( ! isalpha( (char) (iter1) ) ) continue;
-        if( ! islower( (char) (iter1) ) ) continue;
-        findMapValue = occurrenceMap.find( (char) (iter1) );
-        if( findMapValue != occurrenceMap.end() )
-        {
-            int numOccurrence = occurrenceMap[iter1];
-            if( numOccurrence > 1 )
-            {
-                cout << numOccurrence;
-            }
-            cout << (char) (iter1);
-        } else
-        {
-            // value not found ion the occurrence map.. bug.
-            cout << "should not happen" << endl;
-        }
-    }
-    cout << "\"" << endl;
-    cout << "Method 2 End" << endl;
-    T_END
-
-}
 
